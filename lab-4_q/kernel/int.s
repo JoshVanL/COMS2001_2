@@ -10,7 +10,8 @@
 	
 int_data:            ldr   pc, int_addr_rst        @ reset                 vector -> SVC mode
                      b     .                       @ undefined instruction vector -> UND mode
-                     b     .                       @ supervisor call       vector -> SVC mode
+					 ldr pc, int_addr_svc 		   @ suv call
+//                     b     .                       @ supervisor call       vector -> SVC mode
                      b     .                       @ pre-fetch abort       vector -> ABT mode
                      b     .                       @      data abort       vector -> ABT mode
                      b     .                       @ reserved
