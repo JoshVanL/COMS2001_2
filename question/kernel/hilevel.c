@@ -1,7 +1,8 @@
 #include "hilevel.h"
 
 
-pcb_t pcb[ 3  ], *current = NULL;
+pcb_t pcb[ 4  ], *current = NULL;
+int count=1;
 
 void scheduler( ctx_t* ctx  ) {
 	if      ( current == &pcb[ 0  ]  ) {
@@ -16,12 +17,18 @@ void scheduler( ctx_t* ctx  ) {
     current = &pcb[ 2  ];
   
 	}
-	else if ( current == &pcb[ 2  ]  ) {
-    memcpy( &pcb[ 2  ].ctx, ctx, sizeof( ctx_t  )  );
-    memcpy( ctx, &pcb[ 0  ].ctx, sizeof( ctx_t  )  );
-    current = &pcb[ 0  ];
+	//else if ( current == &pcb[ 2  ]  ) {
+    //memcpy( &pcb[ 2  ].ctx, ctx, sizeof( ctx_t  )  );
+    //memcpy( ctx, &pcb[ 3  ].ctx, sizeof( ctx_t  )  );
+    //current = &pcb[ 3  ];
   
-	}
+	//}
+	//else if ( current == &pcb[ 3  ]  ) {
+    //memcpy( &pcb[ 3  ].ctx, ctx, sizeof( ctx_t  )  );
+    //memcpy( ctx, &pcb[ 0  ].ctx, sizeof( ctx_t  )  );
+    //current = &pcb[ 0  ];
+  
+	//}
 	
 	return;
 }
@@ -32,6 +39,8 @@ extern void     main_P4();
 extern uint32_t tos_P4;
 extern void     main_P5();
 extern uint32_t tos_P5;
+extern void     main_console();
+extern uint32_t tos_console(); 
 
 
 
@@ -60,25 +69,30 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   memset( &pcb[ 0  ], 0, sizeof( pcb_t  )  );
   pcb[ 0  ].pid      = 1;
   pcb[ 0  ].ctx.cpsr = 0x50;
-  pcb[ 0  ].ctx.pc   = ( uint32_t  )( &main_P3  );
-  pcb[ 0  ].ctx.sp   = ( uint32_t  )( &tos_P3   );
+  pcb[ 0  ].ctx.pc   = ( uint32_t  )( &main_console  );
+  pcb[ 0  ].ctx.sp   = ( uint32_t  )( &tos_console   );
   
-  memset( &pcb[ 1  ], 0, sizeof( pcb_t  )  );
-  pcb[ 1  ].pid      = 2;
-  pcb[ 1  ].ctx.cpsr = 0x50;
-  pcb[ 1  ].ctx.pc   = ( uint32_t  )( &main_P4  );
-  pcb[ 1  ].ctx.sp   = ( uint32_t  )( &tos_P4   );
+  //memset( &pcb[ 1  ], 0, sizeof( pcb_t  )  );
+  //pcb[ 1  ].pid      = 2;
+  //pcb[ 1  ].ctx.cpsr = 0x50;
+  //pcb[ 1  ].ctx.pc   = ( uint32_t  )( &main_P4  );
+  //pcb[ 1  ].ctx.sp   = ( uint32_t  )( &tos_P4   );
 
-  memset( &pcb[ 2  ], 0, sizeof( pcb_t  )  );
-  pcb[ 2  ].pid      = 3;
-  pcb[ 2  ].ctx.cpsr = 0x50;
-  pcb[ 2  ].ctx.pc   = ( uint32_t  )( &main_P5  );
-  pcb[ 2  ].ctx.sp   = ( uint32_t  )( &tos_P5   );
+  //memset( &pcb[ 2  ], 0, sizeof( pcb_t  )  );
+  //pcb[ 2  ].pid      = 3;
+  //pcb[ 2  ].ctx.cpsr = 0x50;
+  //pcb[ 2  ].ctx.pc   = ( uint32_t  )( &main_P5  );
+  //pcb[ 2  ].ctx.sp   = ( uint32_t  )( &tos_P5   );
 
-
+  //memset( &pcb[ 3  ], 0, sizeof( pcb_t  )  );
+  //pcb[ 3  ].pid      = 4;
+  //pcb[ 3  ].ctx.cpsr = 0x50;
+  //pcb[ 3  ].ctx.pc   = ( uint32_t  )( &main_console  );
+  //pcb[ 3  ].ctx.sp   = ( uint32_t  )( &tos_console   );
 
   int_enable_irq();
 
+  //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   return;
 }
@@ -91,7 +105,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if( id == GIC_SOURCE_TIMER0 ) {
     PL011_putc( UART0, 'T', true ); TIMER0->Timer1IntClr = 0x01;
-	scheduler(ctx);
+	//scheduler(ctx);
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
@@ -125,7 +139,19 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      ctx->gpr[ 0  ] = n;
      break;
     }
+    case 0x03 : { //Fork()
+      PL011_putc( UART0, 'F', true );
+      PL011_putc( UART0, 'O', true );
+      break;
+    }
+    case 0x05 : { //EXEC()
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'X', true );
+      break;
+    }
     default   : { // 0x?? => unknown/unsupported
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'R', true );
       break;
     }
   
