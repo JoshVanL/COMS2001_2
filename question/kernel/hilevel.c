@@ -9,13 +9,11 @@ uint32_t icurrent = 0;
 void scheduler( ctx_t* ctx  ) {
   if  (count > 0) { 
     if (icurrent+1 > count) {
-      PL011_putc( UART0, '1', true );
       memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
       memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
       current = &pcb[ 0  ];
       icurrent =0;
     } else {
-      PL011_putc( UART0, '0', true );
       memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
       memcpy( ctx, &pcb[ icurrent+1 ].ctx, sizeof( ctx_t  )  );
       current = &pcb[ icurrent+1  ];
@@ -116,12 +114,26 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
-  memcpy( &pcb[ 0  ].ctx, ctx, sizeof( ctx_t  )  );
+  memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ count  ].ctx, sizeof( ctx_t  )  );
   current = &pcb[ count  ];
   icurrent = count;
   return;
 }
+
+
+void do_Exit (ctx_t* ctx ) {
+  for(uint32_t i = icurrent; i<count; i++) { 
+    memcpy( ctx, &pcb[ i+1 ].ctx, sizeof( &pcb[ i+1  ].ctx  )  );
+    memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( &pcb[ i+1  ].ctx));
+  }
+  count--;
+  icurrent--;
+  current = &pcb [ icurrent ];
+  //memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
+  return;
+}
+
     
 
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
@@ -148,14 +160,23 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      break;
     }
     case 0x03 : { //Fork()
+      PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'F', true );
-      PL011_putc( UART0, 'O', true );
+      PL011_putc( UART0, ' ', true );
       tos_userProgram = ( void* ) (malloc( 0x00001000) );
       break;
     }
-    case 0x05 : { //EXEC()
-      PL011_putc( UART0, 'E', true );
+    case 0x04 : {  //Exit()
+      PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'X', true );
+      PL011_putc( UART0, ' ', true );
+      do_Exit( ctx );
+      break;
+    }     
+    case 0x05 : { //EXEC()
+      PL011_putc( UART0, ' ', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, ' ', true );
       do_Exec(ctx);
       break;
     }
