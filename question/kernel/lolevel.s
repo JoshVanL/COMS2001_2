@@ -51,10 +51,10 @@ lolevel_handler_irq: sub   lr, lr, #4              @ correct return address
                      stmia sp, { r0-r12, sp, lr   }^ @ store  USR registers
                      mrs   r0, spsr                @ get    USR        CPSR
                      stmdb sp!, { r0, lr   }         @ store  USR PC and CPSR
-                    mov r0, sp
+                     mov r0, sp
 
-                    bl    hilevel_handler_irq     @ invoke high-level C function
-                    ldmia sp!, { r0, lr   }         @ load   USR mode PC and CPSR
+                     bl    hilevel_handler_irq     @ invoke high-level C function
+                     ldmia sp!, { r0, lr   }         @ load   USR mode PC and CPSR
                      msr   spsr, r0                @ set    USR mode        CPSR
                      ldmia sp, { r0-r12, sp, lr   }^ @ load   USR mode registers
                      add   sp, sp, #60             @ update SVC mode SP

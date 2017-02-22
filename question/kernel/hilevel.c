@@ -80,9 +80,9 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   int_enable_irq();
 
+  icurrent =0;
   //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   current = &pcb[ 0  ]; 
-  icurrent =0;
   memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   return;
 }
@@ -94,7 +94,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if( id == GIC_SOURCE_TIMER0 ) {
-    //PL011_putc( UART0, 'T', true ); 
+    PL011_putc( UART0, 'T', true ); 
     TIMER0->Timer1IntClr = 0x01;
 	scheduler(ctx);
   }
