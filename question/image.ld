@@ -7,6 +7,13 @@ SECTIONS {
     .data : {                         *(.data        ) }
     /* place bss  segment(s)           */        
     .bss  : {                         *(.bss         ) }
+    /* allocate heap */
+    .heap : {
+        end        = .;
+       _heap_start = .;
+       .           = . + 0x10000000;
+       _heap_end   = .;
+    }
     /* align       address (per AAPCS) */
     .       = ALIGN( 8 );        
     /* allocate stack for irq mode     */
@@ -16,13 +23,13 @@ SECTIONS {
     .       = . + 0x00001000;  
     tos_svc = .;
     /* allocate stack for P3           */
-    .       = . + 0x00001000;
+    /*.       = . + 0x00001000;
     tos_P3  = .;
     /* allocate stack for P4           */
-    .       = . + 0x00001000;
+    /*.       = . + 0x00001000;
     tos_P4  = .;
     /* allocate stack for P5           */
-    .       = . + 0x00001000;
+    /*.       = . + 0x00001000;
     tos_P5  = .;
     /* allocate stack for console       */
     .       = . + 0x00001000;

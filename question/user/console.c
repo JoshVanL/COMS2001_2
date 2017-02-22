@@ -54,11 +54,12 @@ void* load( char* x ) {
  * 3. execute whatever steps the command dictates.
  */
 
+
 void main_console() {
   char* p, x[ 1024 ];
 
   while( 1 ) {
-    puts( "\nshell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
+    puts( "shell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
 
     if     ( 0 == strcmp( p, "fork" ) ) {
       pid_t pid = fork();

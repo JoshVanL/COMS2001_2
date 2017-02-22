@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+#include <stdlib.h>
+
 // Include functionality relating to the   kernel.
 
 #include "lolevel.h"
