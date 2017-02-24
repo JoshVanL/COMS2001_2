@@ -127,5 +127,6 @@ int kill( int pid, int x ) {
               : "I" (SYS_KILL), "r" (pid), "r" (x)
               : "r0", "r1" );
 
+  
   return r;
 }

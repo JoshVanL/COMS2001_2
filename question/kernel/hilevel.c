@@ -37,11 +37,8 @@ void scheduler( ctx_t* ctx  ) {
 }
 
 extern void     main_P3();
-//extern uint32_t tos_P3;
 extern void     main_P4();
-//extern uint32_t tos_P4;
 extern void     main_P5();
-//extern uint32_t tos_P5;
 extern void     main_console();
 extern uint32_t tos_console(); 
 
@@ -70,7 +67,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
   
   memset( &pcb[ 0  ], 0, sizeof( pcb_t  )  );
-  pcb[ 0  ].pid      = 1;
+  pcb[ 0  ].pid      = 0;
   pcb[ 0  ].ctx.cpsr = 0x50;
   pcb[ 0  ].ctx.pc   = ( uint32_t  )( &main_console  );
   pcb[ 0  ].ctx.sp   = ( uint32_t  )( &tos_console   );
@@ -92,7 +89,9 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if( id == GIC_SOURCE_TIMER0 ) {
+    PL011_putc( UART0, '\n', true ); 
     PL011_putc( UART0, 'T', true ); 
+    PL011_putc( UART0, '\n', true ); 
     TIMER0->Timer1IntClr = 0x01;
 	scheduler(ctx);
   }
@@ -104,13 +103,14 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   return;
 }
 
-void* tos_userProgram = NULL;
+extern uint32_t _heap_start;
+void* tos_userProgram = &_heap_start;
 
 void do_Exec (ctx_t* ctx ) {
   void* prog = ( void* )( ctx ->gpr[ 0 ] );
   count++;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
-  pcb[ count  ].pid      = (count+1);
+  pcb[ count  ].pid      = count;
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
@@ -123,14 +123,29 @@ void do_Exec (ctx_t* ctx ) {
 
 
 void do_Exit (ctx_t* ctx ) {
-  for(uint32_t i = icurrent; i<count; i++) { 
-    memcpy( ctx, &pcb[ i+1 ].ctx, sizeof( &pcb[ i+1  ].ctx  )  );
-    memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( &pcb[ i+1  ].ctx));
+  for (uint32_t i = icurrent; i<count; i++) {
+    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
+    memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
   }
   count--;
-  icurrent--;
+  icurrent = 0;
+  memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
   current = &pcb [ icurrent ];
-  //memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
+  PL011_putc( UART0, 'H', true );
+  PL011_putc( UART0, '\n', true );
+  return;
+}
+
+void do_Kill(pid_t pid) {
+  for(uint32_t i = 1; i <=count; i++) {
+    if (pid == pcb[ i ].pid) {
+        PL011_putc( UART0, 'P', true );
+        icurrent = i;
+        current = &pcb[ i ];
+        do_Exit(&pcb[i].ctx);
+        break;
+    }
+  }
   return;
 }
 
@@ -160,29 +175,34 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      break;
     }
     case 0x03 : { //Fork()
-      PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'F', true );
-      PL011_putc( UART0, ' ', true );
-      tos_userProgram = ( void* ) (malloc( 0x00001000) );
+      PL011_putc( UART0, '\n', true );
+      //tos_userProgram = ( void* ) (malloc( 0x00001000) );
+      tos_userProgram = &tos_userProgram + 0x00010000; 
       break;
     }
     case 0x04 : {  //Exit()
-      PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'X', true );
-      PL011_putc( UART0, ' ', true );
+      PL011_putc( UART0, '\n', true );
       do_Exit( ctx );
       break;
     }     
     case 0x05 : { //EXEC()
-      PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'E', true );
-      PL011_putc( UART0, ' ', true );
+      PL011_putc( UART0, '\n', true );
       do_Exec(ctx);
+      break;
+    }
+    case 0x06 : { //KILL()
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, '\n', true );
+      do_Kill(ctx->gpr[0]);
       break;
     }
     default   : { // 0x?? => unknown/unsupported
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'R', true );
+      PL011_putc( UART0, '\n', true );
       break;
     }
   
