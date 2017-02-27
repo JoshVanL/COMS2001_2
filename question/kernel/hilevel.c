@@ -11,7 +11,7 @@ extern void     main_console();
 extern uint32_t tos_console(); 
 
 extern uint32_t tos_shared();
-uint32_t sharred_current = (uint32_t) (&tos_shared);
+void* sharred_current = (void*) (tos_shared);
 
 void scheduler( ctx_t* ctx  ) {
   int32_t next = 0;
@@ -168,6 +168,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      int   fd = ( int    )( ctx->gpr[ 0  ]  );
      char*  x = ( char*  )( ctx->gpr[ 1  ]  );
      int    n = ( int    )( ctx->gpr[ 2  ]  );
+
    
      if (fd == 1) { //write to console
        for( int i = 0; i < n; i++  ) {
@@ -176,17 +177,27 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
        ctx->gpr[ 0  ] = n;
      }   
      else if (fd == 3) { //write to shared memory
+     PL011_putc( UART0, 'W', true );
          for( int i =0; i < n; i++) {
-            memset( tos_shared, *x++, sizeof(x)); 
-            PL011_putc( UART0, 'W', true );
+            memset( sharred_current++, *x++, sizeof(x)); 
         }
      }
 
      break;
     }
     case 0x02 : { //Read()
+      int   fd = ( int    )( ctx->gpr[ 0  ]  );
+      char*  x = ( char*  )( ctx->gpr[ 1  ]  );
+      int    n = ( int    )( ctx->gpr[ 2  ]  );
+       
       PL011_putc( UART0, 'R', true );
-      //ctx->gpr[ 1 ] = tos_shared;
+      sharred_current = (&tos_shared); 
+
+      if (fd == 3) {
+       for( int i =0; i < n; i++) {
+         memcpy(x++, sharred_current++, sizeof(x)); 
+       }
+      }
       break;
     }
     case 0x03 : { //Fork()
