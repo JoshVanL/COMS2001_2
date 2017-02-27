@@ -25,6 +25,9 @@ SECTIONS {
     /* allocate stack for console       */
     .       = . + 0x00001000;
     tos_console  = .;
+    /* allocate stack for shared memoirt */
+    .       = . + 0x00001000;
+    tos_shared = .;
 
 
 }

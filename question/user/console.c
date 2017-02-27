@@ -5,13 +5,7 @@
  * once a carriage return character has been read, or an overall
  * limit reached).
  */
-
-void puts( char* x, int n ) {
-  for( int i = 0; i < n; i++ ) {
-    PL011_putc( UART1, x[ i ], true );
-  }
-}
-
+void puts( char* x, int n ) { for( int i = 0; i < n; i++ ) { PL011_putc( UART1, x[ i ], true ); } } 
 void gets( char* x, int n ) {
   for( int i = 0; i < n; i++ ) {
     x[ i ] = PL011_getc( UART1, true );
@@ -31,6 +25,8 @@ void gets( char* x, int n ) {
 extern void main_P3(); 
 extern void main_P4(); 
 extern void main_P5(); 
+extern void main_Factory();
+extern void main_Test();
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
@@ -41,6 +37,12 @@ void* load( char* x ) {
   }
   else if( 0 == strcmp( x, "P5" ) ) {
     return &main_P5;
+  }
+  else if( 0 == strcmp( x, "Factory" ) ) {
+    return &main_Factory;
+  }
+  else if( 0 == strcmp( x, "Test" ) ) {
+    return &main_Test;
   }
 
   return NULL;
