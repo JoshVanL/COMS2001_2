@@ -9,7 +9,7 @@ void main_Test() {
       C[i] = 1;
   }
 
-  write(SHARED_MEM, "hi", 2);
+  write(SHARED_MEM, *O, 2);
   read(SHARED_MEM, *O, 2);
   write( STDOUT_FILENO, *O, 2 );
  

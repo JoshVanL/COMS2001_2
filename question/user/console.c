@@ -68,7 +68,8 @@ void main_console() {
 
       if( 0 == pid ) {
         void* addr = load( strtok( NULL, " " ) );
-        exec( addr );
+        char* arg = strtok( NULL, " ");
+        exec( addr , arg );
       }
     } 
     else if( 0 == strcmp( p, "kill" ) ) {

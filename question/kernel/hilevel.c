@@ -44,7 +44,6 @@ void scheduler( ctx_t* ctx  ) {
 
 
 
-
 void hilevel_handler_rst(  ctx_t* ctx ) {
   /* Configure the mechanism for interrupt handling by
   *
@@ -101,7 +100,9 @@ extern uint32_t _heap_start;
 void* tos_userProgram = &_heap_start;
 
 void do_Exec (ctx_t* ctx ) {
-  void* prog = ( void* )( ctx ->gpr[ 0 ] );
+  void* (*prog)(char*) = ( void* )( ctx->gpr[ 0 ] );
+  char* arg = ( char * ) (ctx->gpr[ 1 ] );
+  PL011_putc( UART0, arg[0], true);
   count++;
   pidNum++;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
@@ -109,8 +110,9 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
+  memset(tos_userProgram, *arg, sizeof(arg));
 
-  priority[count] = 5;
+  priority[count] = 3;
   scheduler(ctx);
   return;
 }
@@ -119,11 +121,7 @@ void do_Exec (ctx_t* ctx ) {
 void do_Exit (ctx_t* ctx ) {
   for (uint32_t i = icurrent; i<count; i++) {
     //pcb[i].pid = i;
-    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  );
-    memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
-    priority[i] = priority[i+1];
-  }
-  count--;
+    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  ); memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  ); priority[i] = priority[i+1]; } count--;
   icurrent = 0;
   memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
   current = &pcb [ icurrent ];
@@ -177,7 +175,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
        ctx->gpr[ 0  ] = n;
      }   
      else if (fd == 3) { //write to shared memory
-     PL011_putc( UART0, 'W', true );
          for( int i =0; i < n; i++) {
             memset( sharred_current++, *x++, sizeof(x)); 
         }
@@ -190,7 +187,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char*  x = ( char*  )( ctx->gpr[ 1  ]  );
       int    n = ( int    )( ctx->gpr[ 2  ]  );
        
-      PL011_putc( UART0, 'R', true );
       sharred_current = (&tos_shared); 
 
       if (fd == 3) {

@@ -1,54 +1,68 @@
 #include "Philosopher.h"
 
-char* C[16];
-int i;
+#define num 5
+
+char* C[num];
+int i=0;
 
 void think( uint32_t x ) {
-  if ( !( x & 1 ) || ( x < 2 ) ) {
-    return;
+  write(STDOUT_FILENO, "Thinking\n", 9);
+  for(int c= 0; c < 999999*i; c++) {
+      for(int d=0; d< 99999*i; c++) {
+      }
   }
-
-  for( uint32_t d = 3; ( d * d ) <= x ; d += 2 ) {
-    if( !( x % d ) ) {
-      return;
-    }
-  }
-
   return;
 }
 
 void eat( uint32_t x) {
-    think(x);
-    return;
+  write(STDOUT_FILENO, "Eating\n", 7);
+  for(int c= 0; c < 999999*i; c++) {
+      for(int d=0; d< 99999*i; c++) {
+      }
+  }
+  return;
 }
 
 void pickup() {
-  while(*C[i] == 1 || *C[(i+1)%16] == 1) read(SHARED_MEM, *C, 16);
+  while(*C[i] == 1 || *C[(i+1)%num] == 1){
+      read(SHARED_MEM, *C, num);
+      write(STDOUT_FILENO, "Waiting\n", 8);
+  }
   *C[i] = *C[i+1] = 1;
-  write(SHARED_MEM, &C, 16);
+  write(SHARED_MEM, *C, num);
   return;
 }
 
 
 void putdown() {
   *C[i] = *C[i+1] = 0;
-  write(SHARED_MEM, &C, 16);
+  write(SHARED_MEM, *C, num);
   return;
 }
 
-
 void main_Philosopher() {
-  i = 1;
-  read(SHARED_MEM, *C, 16);
+
+  read(SHARED_MEM, *C, num);
+  int n =0;
+  while(n<num) {
+    if(*C[n] == 1){
+      i =n;
+      break;
+    }
+    n++;
+  }
+
+
   long r = (i*1238321);
 
-  while(1) {
+  while(n< 10) {
     think(r);
     pickup();
     eat(r);
     putdown;
+    n++;
   }
 
 
-  return;
+  exit( EXIT_SUCCESS );
 }

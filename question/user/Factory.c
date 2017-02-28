@@ -1,27 +1,31 @@
-#include "Factory.h"
+#include "Factory.h" 
+#define num 5
 
 extern void main_Philosopher();
 
-void main_Factory() {
-  char* C[16];
 
-  for (int i = 0; i < 16; i++) {
+void main_Factory(char* args[]) {
+  char* C[num];
+  char* arg[10];
+
+  for (int i = 0; i < num; i++) {
       C[i] = 0;
   }
 
-  for(int i =0; i < 16; i++) {
-    write(SHARED_MEM, C, 16);
+  for(int i =0; i < num; i++) {
+    write(SHARED_MEM, *C, num);
   }
 
-  for(int i= 0; i< 1; i++) {
+  for(int i= 0; i< num; i++) {
+    *C[i] =1;
+    write(SHARED_MEM, *C, num);
     fork();
-    exec(main_Philosopher);
+    itoa(*arg, i);
+    //exec(main_Philosopher, *arg);
   }
     
 
 
+  exit( EXIT_SUCCESS );
 }
-
-
-    
-    
+ 
