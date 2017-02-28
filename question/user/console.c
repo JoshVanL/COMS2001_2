@@ -64,12 +64,15 @@ void main_console() {
     puts( "shell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
 
     if     ( 0 == strcmp( p, "fork" ) ) {
-      pid_t pid = fork();
-
-      if( 0 == pid ) {
-        void* addr = load( strtok( NULL, " " ) );
-        char* arg = strtok( NULL, " ");
-        exec( addr , arg );
+      void* addr = load( strtok( NULL, " " ) );
+      char* arg = strtok( NULL, " ");
+      if( addr != NULL) {
+        pid_t pid = fork();
+       // if( 0 == pid ) {
+          exec( addr , arg );
+        //}     
+      } else {   
+        puts("unknown program\n", 16); 
       }
     } 
     else if( 0 == strcmp( p, "kill" ) ) {

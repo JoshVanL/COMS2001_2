@@ -106,13 +106,12 @@ void exit( int x ) {
   return;
 }
 
-void exec( const void* x, char* args ) {
+void exec( const void* x ) {
   asm volatile( "mov r0, %1 \n" // assign r0 = x
-                "mov r1, %2 \n" // assign r0 = args
                 "svc %0     \n" // make system call SYS_EXEC
               :
-              : "I" (SYS_EXEC), "r" (x), "r" (args)
-              : "r0", "r1" );
+              : "I" (SYS_EXEC), "r" (x)
+              : "r0" );
 
   return;
 }

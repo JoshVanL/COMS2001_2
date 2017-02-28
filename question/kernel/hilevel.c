@@ -100,9 +100,7 @@ extern uint32_t _heap_start;
 void* tos_userProgram = &_heap_start;
 
 void do_Exec (ctx_t* ctx ) {
-  void* (*prog)(char*) = ( void* )( ctx->gpr[ 0 ] );
-  char* arg = ( char * ) (ctx->gpr[ 1 ] );
-  PL011_putc( UART0, arg[0], true);
+  void* (*prog) = ( void* )( ctx->gpr[ 0 ] );
   count++;
   pidNum++;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
@@ -110,10 +108,11 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
-  memset(tos_userProgram, *arg, sizeof(arg));
 
-  priority[count] = 3;
-  scheduler(ctx);
+  priority[count] = 2;
+  
+
+  //scheduler(ctx);
   return;
 }
 
@@ -175,8 +174,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
        ctx->gpr[ 0  ] = n;
      }   
      else if (fd == 3) { //write to shared memory
+        sharred_current = (&tos_shared); 
          for( int i =0; i < n; i++) {
-            memset( sharred_current++, *x++, sizeof(x)); 
+            memset( sharred_current++, *x++, sizeof(char)); 
         }
      }
 
@@ -191,7 +191,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
       if (fd == 3) {
        for( int i =0; i < n; i++) {
-         memcpy(x++, sharred_current++, sizeof(x)); 
+         memcpy(x++, sharred_current++, sizeof(char)); 
        }
       }
       break;
