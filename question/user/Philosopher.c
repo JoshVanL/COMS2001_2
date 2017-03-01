@@ -61,10 +61,14 @@ void main_Philosopher(int argc, char* argv[]) {
  ////write(STDOUT_FILENO, &C, 1);
  //write(SHARED_MEM, &C, 6);
 
- //write(STDOUT_FILENO, "Done", 5);
+ write(STDOUT_FILENO, argv[0], 5);
+ int i = atoi(argv[0]);
+ int C[num+1];
+ read(SHARED_MEM, &C, num+1);
+ C[i] = 1;
+
  //char* ch;
  //itoa(ch,i);
-  write(STDOUT_FILENO, argv[0], 1);
 
 
 // long r = (i*1238321);
