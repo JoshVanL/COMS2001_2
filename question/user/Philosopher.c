@@ -40,7 +40,7 @@
 //  return;
 //}
 
-void main_Philosopher(char* arg) {
+void main_Philosopher(int argc, char* argv[]) {
  //int i = 0;
  //char C[num+1];
 
@@ -64,7 +64,7 @@ void main_Philosopher(char* arg) {
  //write(STDOUT_FILENO, "Done", 5);
  //char* ch;
  //itoa(ch,i);
-  write(STDOUT_FILENO, arg, 6);
+  write(STDOUT_FILENO, argv[0], 1);
 
 
 // long r = (i*1238321);

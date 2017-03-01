@@ -4,7 +4,7 @@
 extern void main_Philosopher();
 
 
-void main_Factory(char* args[]) {
+void main_Factory(int argc, char* argv[]) {
 // char C[num+1];
 // char P[6];
 // char* arg[10];
@@ -32,7 +32,9 @@ void main_Factory(char* args[]) {
 
   fork();
   void* addr = &main_Philosopher;
-  exec(addr, "hello");
+  char* arg[1];
+  arg[0] = "5";
+  exec(addr, arg);
 
 
   exit( EXIT_SUCCESS );

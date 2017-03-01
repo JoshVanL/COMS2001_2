@@ -101,7 +101,12 @@ void* tos_userProgram = &_heap_start;
 
 void do_Exec (ctx_t* ctx ) {
   void* (*prog) = ( void* )( ctx->gpr[ 0 ] );
-  char* (arg) = (char*) (ctx->gpr[1]);
+  char** (stra) = (char**) (ctx->gpr[1]);
+  uint32_t argc = 0;
+  while(stra[argc] != NULL) argc++;
+  char* argv[argc];
+  for(int i=0; i<argc; i++)argv[i] = stra[i];
+
   count++;
   pidNum++;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
@@ -109,10 +114,10 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
-  pcb[ count  ].ctx.gpr[0]   = ( uint32_t  )( arg );    
+  pcb[ count  ].ctx.gpr[0]   = ( uint32_t  )( argc );    
+  pcb[ count  ].ctx.gpr[1]   = ( uint32_t  )( argv );    
 
   priority[count] = 2;
-  
 
   //scheduler(ctx);
   return;

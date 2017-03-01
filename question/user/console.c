@@ -59,17 +59,27 @@ void* load( char* x ) {
 
 void main_console() {
   char* p, x[ 1024 ];
+  char *arg[5];
+  int i;
 
   while( 1 ) {
     puts( "shell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
 
     if     ( 0 == strcmp( p, "fork" ) ) {
       void* addr = load( strtok( NULL, " " ) );
-      char* arg = strtok( NULL, " ");
+
+      i =0;
+      arg[i] = strtok( NULL, " "); 
+      while( arg[i] != NULL) {
+          i++;
+          arg[i] = strtok( NULL, " ");
+      }
+
       if( addr != NULL) {
-        pid_t pid = fork();
-       // if( 0 == pid ) {
+          pid_t pid = fork();
+          // if( 0 == pid ) {
           exec( addr , arg );
+          for(int n=0; n<5; n++)arg[n] = NULL;
         //}     
       } else {   
         puts("unknown program\n", 16); 
