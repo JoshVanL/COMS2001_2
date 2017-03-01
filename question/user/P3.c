@@ -14,7 +14,7 @@ int is_prime( uint32_t x ) {
   return 1;
 }
 
-void main_P3(char* arg[]) {
+void main_P3(char* arg) {
   write( STDOUT_FILENO, arg, 6 );
   for( int i = 0; i < 20; i++ ) {
     write( STDOUT_FILENO, "P3", 2 );
