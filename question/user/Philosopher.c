@@ -40,31 +40,31 @@
 //  return;
 //}
 
-void main_Philosopher() {
-  int i = 0;
-  char C[num+1];
+void main_Philosopher(char* arg) {
+ //int i = 0;
+ //char C[num+1];
 
-  read(SHARED_MEM, &C, num);
-  write(STDOUT_FILENO, &C, 6);
-  int n =0;
-  while(1) {
-    if(C[n] == '0'){
-      i =n;
-      break;
-    }
-    n++;
-  }
+ //read(SHARED_MEM, &C, num);
+ //write(STDOUT_FILENO, &C, 6);
+ //int n =0;
+ //while(1) {
+ //  if(C[n] == '0'){
+ //    i =n;
+ //    break;
+ //  }
+ //  n++;
+ //}
 
-  C[num] = C[i] = '1';
-  char p = i + '0';
+ //C[num] = C[i] = '1';
+ //char p = i + '0';
 
-  //write(STDOUT_FILENO, &C, 1);
-  write(SHARED_MEM, &C, 6);
+ ////write(STDOUT_FILENO, &C, 1);
+ //write(SHARED_MEM, &C, 6);
 
-  write(STDOUT_FILENO, "Done", 5);
-  char* ch;
-  itoa(ch,i);
-  write(STDOUT_FILENO, &ch, 1);
+ //write(STDOUT_FILENO, "Done", 5);
+ //char* ch;
+ //itoa(ch,i);
+  write(STDOUT_FILENO, arg, 6);
 
 
 // long r = (i*1238321);
