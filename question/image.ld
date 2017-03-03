@@ -11,7 +11,7 @@ SECTIONS {
     .heap : {
         end        = .;
        _heap_start = .;
-       .           = . + 0x01000000;
+       .           = . + 0x90000000;
        _heap_end   = .;
     }
     /* align       address (per AAPCS) */

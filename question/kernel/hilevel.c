@@ -183,7 +183,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
      else if (fd == 3) { //write to shared memory
         sharred_current = (&tos_shared); 
          for( int i =0; i < n; i++) {
-            memset( sharred_current++, *x++, sizeof(char)); 
+            memset( sharred_current, *x, sizeof(int)); 
+            x += sizeof(int);
+            sharred_current += sizeof(int);
         }
      }
 
@@ -198,7 +200,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
       if (fd == 3) {
        for( int i =0; i < n; i++) {
-         memcpy(x++, sharred_current++, sizeof(char)); 
+         memcpy(x, sharred_current, sizeof(int)); 
+         x += sizeof(int);
+         sharred_current += sizeof(int);
        }
       }
       break;
