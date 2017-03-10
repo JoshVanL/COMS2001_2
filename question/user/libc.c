@@ -144,7 +144,7 @@ int share_init() {
   return r;
 }
 
-int share( int fd, const void* pnt, int* x, int n) {
+int share( int fd, int pnt, int* x, int n) {
   int r;
 
   asm volatile( "mov r0, %2 \n" // assign r0 = fd

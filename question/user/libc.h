@@ -74,6 +74,6 @@ extern int  kill( pid_t pid, int x );
 extern int share_init(); 
 
 // perform INIT, WRITE or READ from shared mem, return location of that address.
-extern int  share( int fd, const void* pnt, int* x, int n );
+extern int  share( int fd, int pnt, int* x, int n );
 
 #endif

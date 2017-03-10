@@ -11,9 +11,10 @@ extern void     main_console();
 extern uint32_t tos_console(); 
 
 extern uint32_t tos_shared();
-void* sharred_current = (void*) (tos_shared);
+uint32_t* sharred_current = (uint32_t*) (tos_shared);
 
 void scheduler( ctx_t* ctx  ) {
+  bool changed=false;
   int32_t next = 0;
   int hiPriority = priority[0];
 
@@ -21,28 +22,46 @@ void scheduler( ctx_t* ctx  ) {
      if (priority[i] > hiPriority) {
         hiPriority = priority[i];
         next = i;
+        changed=true;
       } else {
-        priority[i] += 3;
+        priority[i] += 1;
       }
   }
 
-  priority[next] -= 2;
+  priority[next] -= 4;
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ next ].ctx, sizeof( ctx_t  )  );
   current = &pcb[ next ];
   icurrent = next;
 
-  char x = (pcb[ icurrent].pid + '0');
-  PL011_putc( UART0, '\n', true ); 
-  PL011_putc( UART0, x, true ); 
-  PL011_putc( UART0, ':', true ); 
-  PL011_putc( UART0, ' ', true ); 
+  if(changed) {
+    char* x;
+    uint32_t num = pcb[ icurrent].pid %10;
+    x[0] = '0' +  num;
+    num = (pcb[ icurrent].pid - num)/10;
+    x[1] = '0' + num;
+
+    PL011_putc( UART0, '\n', true ); 
+    PL011_putc( UART0, x[1], true ); 
+    PL011_putc( UART0, x[0], true ); 
+    PL011_putc( UART0, ':', true ); 
+    PL011_putc( UART0, ' ', true ); 
+  }
 	
   return;
 }
 
 
+void printZero() {
 
+  PL011_putc( UART0, '\n', true ); 
+  PL011_putc( UART0, '0', true ); 
+  PL011_putc( UART0, '0', true ); 
+  PL011_putc( UART0, '$', true ); 
+  PL011_putc( UART0, ' ', true ); 
+
+  return;
+}
 
 void hilevel_handler_rst(  ctx_t* ctx ) {
   /* Configure the mechanism for interrupt handling by
@@ -54,7 +73,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   * - enabling IRQ interrupts.
   */
   
-  TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Load  = 0x00050000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
@@ -73,11 +92,15 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   priority[0] = 1;
   
-int_enable_irq(); icurrent =0; //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
+  int_enable_irq(); icurrent =0; //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   current = &pcb[ 0  ]; 
   memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
+
+  printZero();
+
   return;
 }
+
 void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
@@ -132,6 +155,8 @@ void do_Exit (ctx_t* ctx ) {
   memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
   current = &pcb [ icurrent ];
   PL011_putc( UART0, 'H', true );
+
+  printZero();
   return;
 }
 
@@ -152,10 +177,11 @@ void do_Kill( ctx_t* ctx ) {
   count--;
   icurrent = 0;
   PL011_putc( UART0, 'H', true );
+  printZero();
   return;
 }
 
-    
+bool flag_share = false;
 
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   /* Each time execution reaches this point, we are tasked with handling
@@ -210,34 +236,22 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x07 : { //Share init
       sharred_current += 0x00010000;
-      ctx->gpr[0] = (uint32_t) (&sharred_current);
+      ctx->gpr[0] = (uint32_t) (sharred_current);
       break;
     }
     case 0x08 : { //Share() Read-Write
       int   fd = ( int    )( ctx->gpr[ 0  ]  );
-      uint32_t* pnt = ( uint32_t*  )( ctx->gpr[ 1  ]  );
+      uint32_t pnt = ( uint32_t  )( ctx->gpr[ 1  ]  );
       uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
       uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
-      //sharred_current = (&tos_shared); 
-      uint32_t* curr = (uint32_t*) (&sharred_current);
+      uint32_t* curr = (uint32_t*) (sharred_current);
+      //uint32_t* curr = (uint32_t*) (pnt);
     
       if (fd == 0) {
          memcpy(&curr[0], x,  n*sizeof(int));
-      //  for( int i =0; i < n; i++) {
-      //    //memcpy(sharred_current, *x, sizeof(int)); 
-      //    *x = *curr;
-      //    x += sizeof(int);
-      //    curr += sizeof(int);
-      //  }
       }
       if (fd == 1) {
         memcpy(x, &curr[0], n*sizeof(int));
-        //for( int i =0; i < n; i++) {
-        // *curr = *x;
-        // // memcpy(*x, sharred_current, sizeof(int)); 
-        //  x += sizeof(int);
-        //  curr += sizeof(int);
-        //}
       }
       break;
     }
