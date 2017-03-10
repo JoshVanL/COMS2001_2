@@ -1,4 +1,5 @@
 #include "Philosopher.h"
+//#define n 5
 
 void main_Philosopher(int argc, char* argv[]) {
  char* a = argv[0];
@@ -8,16 +9,17 @@ void main_Philosopher(int argc, char* argv[]) {
  write(STDOUT_FILENO, b, sizeof(b));
  int i = atoi(a);
  int n = atoi(b);
+ n = 20;
  int* pnt = (int*) atoi(c);
 
- int C[n];
+ int C[20];
 
 
 
 
  share(SHARE_READ, pnt, C, n); 
 
- C[i] =1;
+ C[9] =1;
  share(SHARE_WRITE, pnt, C, n); 
 
 

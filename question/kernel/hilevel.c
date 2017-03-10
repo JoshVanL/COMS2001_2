@@ -219,23 +219,25 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
       uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
       //sharred_current = (&tos_shared); 
-      uint32_t* curr = (uint32_t*) (tos_shared);
+      uint32_t* curr = (uint32_t*) (&sharred_current);
     
       if (fd == 0) {
-        for( int i =0; i < n; i++) {
-          //memcpy(sharred_current, *x, sizeof(int)); 
-          *x = *curr;
-          x += sizeof(int);
-          curr += sizeof(int);
-        }
+         memcpy(&curr[0], x,  n*sizeof(int));
+      //  for( int i =0; i < n; i++) {
+      //    //memcpy(sharred_current, *x, sizeof(int)); 
+      //    *x = *curr;
+      //    x += sizeof(int);
+      //    curr += sizeof(int);
+      //  }
       }
       if (fd == 1) {
-        for( int i =0; i < n; i++) {
-         *curr = *x;
-         // memcpy(*x, sharred_current, sizeof(int)); 
-          x += sizeof(int);
-          curr += sizeof(int);
-        }
+        memcpy(x, &curr[0], n*sizeof(int));
+        //for( int i =0; i < n; i++) {
+        // *curr = *x;
+        // // memcpy(*x, sharred_current, sizeof(int)); 
+        //  x += sizeof(int);
+        //  curr += sizeof(int);
+        //}
       }
       break;
     }
