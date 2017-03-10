@@ -132,17 +132,35 @@ int kill( int pid, int x ) {
   return r;
 }
 
-int share( int fd, const void* x, size_t n ) {
+int share_init() {
   int r;
 
-  asm volatile( "mov r0, %2 \n" // assign r0 = fd
-                "mov r1, %3 \n" // assign r1 =  x
-                "mov r2, %4 \n" // assign r2 =  n
-                "svc %1     \n" // make system call SYS_WRITE
+  asm volatile( "svc %1     \n" // make system call SYS_WRITE
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
-              : "I" (SYS_WRITE), "r" (fd), "r" (x), "r" (n)
-              : "r0", "r1", "r2" );
+              : "I" (SYS_SHARE_INIT)
+              : "r0" );
 
   return r;
 }
+
+int share( int fd, const void* pnt, int* x, int n) {
+  int r;
+
+  asm volatile( "mov r0, %2 \n" // assign r0 = fd
+                "mov r1, %3 \n" // assign r1 =  pnt
+                "mov r2, %4 \n" // assign r3 = x
+                "mov r3, %5 \n" // assign r4 =  n
+                "svc %1     \n" // make system call SYS_WRITE
+                "mov %0, r0 \n" //  assign r  = r0
+              : "=r" (r)           
+              : "I" (SYS_SHARE), "r" (fd), "r" (pnt), "r" (x), "r" (n)
+              : "r0", "r1", "r2",  "r3" );
+                                   
+  return r;                        
+}                                  
+                                   
+                                   
+                                   
+                                   
+                                   

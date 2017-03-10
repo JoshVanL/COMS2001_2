@@ -23,13 +23,15 @@ typedef int pid_t;
  * to act as a limited model of similar concepts.
  */
 
-#define SYS_YIELD     ( 0x00 )
-#define SYS_WRITE     ( 0x01 )
-#define SYS_READ      ( 0x02 )
-#define SYS_FORK      ( 0x03 )
-#define SYS_EXIT      ( 0x04 )
-#define SYS_EXEC      ( 0x05 )
-#define SYS_KILL      ( 0x06 )
+#define SYS_YIELD      ( 0x00 )
+#define SYS_WRITE      ( 0x01 )
+#define SYS_READ       ( 0x02 )
+#define SYS_FORK       ( 0x03 )
+#define SYS_EXIT       ( 0x04 )
+#define SYS_EXEC       ( 0x05 )
+#define SYS_KILL       ( 0x06 )
+#define SYS_SHARE_INIT ( 0x07 )
+#define SYS_SHARE      ( 0x08 )
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -40,7 +42,10 @@ typedef int pid_t;
 #define  STDIN_FILENO ( 0 )
 #define STDOUT_FILENO ( 1 )
 #define STDERR_FILENO ( 2 )
-#define SHARED_MEM    ( 3 )
+
+#define   SHARE_WRITE ( 0 )
+#define    SHARE_READ ( 1 )
+
 
 // convert ASCII string x into integer r
 extern int  atoi( char* x        );
@@ -64,5 +69,11 @@ extern void exec( const void* x, void* arg );
 
 // signal process identified by pid with signal x
 extern int  kill( pid_t pid, int x );
+
+// init share, get shared memory location
+extern int share_init(); 
+
+// perform INIT, WRITE or READ from shared mem, return location of that address.
+extern int  share( int fd, const void* pnt, int* x, int n );
 
 #endif

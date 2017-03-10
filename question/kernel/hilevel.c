@@ -180,31 +180,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
        }
        ctx->gpr[ 0  ] = n;
      }   
-     else if (fd == 3) { //write to shared memory
-        sharred_current = (&tos_shared); 
-         for( int i =0; i < n; i++) {
-            memset( sharred_current, *x, sizeof(int)); 
-            x += sizeof(int);
-            sharred_current += sizeof(int);
-        }
-     }
-
      break;
     }
     case 0x02 : { //Read()
-      int   fd = ( int    )( ctx->gpr[ 0  ]  );
-      char*  x = ( char*  )( ctx->gpr[ 1  ]  );
-      int    n = ( int    )( ctx->gpr[ 2  ]  );
-       
-      sharred_current = (&tos_shared); 
-
-      if (fd == 3) {
-       for( int i =0; i < n; i++) {
-         memcpy(x, sharred_current, sizeof(int)); 
-         x += sizeof(int);
-         sharred_current += sizeof(int);
-       }
-      }
       break;
     }
     case 0x03 : { //Fork()
@@ -228,6 +206,37 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x06 : { //KILL()
       PL011_putc( UART0, 'K', true );
       do_Kill(ctx);
+      break;
+    }
+    case 0x07 : { //Share init
+      sharred_current += 0x00010000;
+      ctx->gpr[0] = (uint32_t) (&sharred_current);
+      break;
+    }
+    case 0x08 : { //Share() Read-Write
+      int   fd = ( int    )( ctx->gpr[ 0  ]  );
+      uint32_t* pnt = ( uint32_t*  )( ctx->gpr[ 1  ]  );
+      uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
+      uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
+      //sharred_current = (&tos_shared); 
+      uint32_t* curr = (uint32_t*) (tos_shared);
+    
+      if (fd == 0) {
+        for( int i =0; i < n; i++) {
+          //memcpy(sharred_current, *x, sizeof(int)); 
+          *x = *curr;
+          x += sizeof(int);
+          curr += sizeof(int);
+        }
+      }
+      if (fd == 1) {
+        for( int i =0; i < n; i++) {
+         *curr = *x;
+         // memcpy(*x, sharred_current, sizeof(int)); 
+          x += sizeof(int);
+          curr += sizeof(int);
+        }
+      }
       break;
     }
     default   : { // 0x?? => unknown/unsupported
