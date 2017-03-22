@@ -260,6 +260,21 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'R', true );
       break;
     }
+    case 0x09 : { //Semaphore down
+      if (flag_share) {
+          ctx->gpr[0] = 0;
+      }
+      else {
+          flag_share = true;
+          ctx->gpr[0] = 1;
+     }
+      break;
+    }
+    case 0x10 : { //Semaphore up
+      flag_share = 0;
+      ctx->gpr[0] = 1; 
+      break;
+    }
   
   }
 

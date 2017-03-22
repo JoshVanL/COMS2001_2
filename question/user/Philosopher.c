@@ -1,9 +1,5 @@
 #include "Philosopher.h"
 
-int i;
-int n;
-int C[20];
-
 int p( uint32_t x ) {
   if ( !( x & 1 ) || ( x < 2 ) ) {
     return ( x == 2 );
@@ -18,22 +14,44 @@ int p( uint32_t x ) {
   return 1;
 }
 
-int pickup() {
+bool pickup(int index, int n) {
+
+  int C[20]; 
+
+  while(semaphore_down());
   share(SHARE_READ, 0, C, 20);
-  if(C[i] == 0 && C[(i+1)%20] == 0) {
-      C[i] = 1;
-      C[(i+i)%n] = 1;
+  semaphore_up();
+
+  if(C[index] == 0 && C[(index+1)%3] == 0) {
+      C[index] = 1;
+      C[(index+1)%3] = 1;
+
+      while(semaphore_down());
       share(SHARE_WRITE, 0, C, 20);
-      return 1;
+      semaphore_up();
+
+      return true;
+  } else {
+      write(STDOUT_FILENO, "cant - ", 7);
   }
-  return 0;
+  return false;
 }
 
-void putdown() {
-  share(SHARE_READ, 0, C, 20);
-  C[i] = 0;
-  C[(i+1)%n] = 0;
+void putdown(int index, int n) {
+
+  int C[20]; 
+
+  while(semaphore_down());
+  share(SHARE_READ, 0, C, 20); 
+  semaphore_up();
+
+  C[index] = 0;
+  C[(index+1)%3] = 0;
+
+  while(semaphore_down());
   share(SHARE_WRITE, 0, C, 20);
+  semaphore_up();
+  
   return;
 }
 
@@ -59,41 +77,58 @@ void eat() {
 }
 
 void main_Philosopher(int argc, char* argv[]) {
+  int n;
+  int C[20];
+
   char* a = argv[0];
   char* b = argv[1];
   char* c = argv[2];
+  char* d;
+
   write(STDOUT_FILENO, a, 2);
   write(STDOUT_FILENO, ":", 2);
   write(STDOUT_FILENO, b, sizeof(b));
-  i = atoi(a);
+  write(STDOUT_FILENO, " ", 2);
+
+  int index = (int) atoi(a);
+
   n = atoi(b);
   int pnt = (int) atoi(c);
  
+  while(semaphore_down());
   share(SHARE_READ, pnt, C, 20); 
+  semaphore_up();
  
   C[19] =1;
+
+  while(semaphore_down());
   share(SHARE_WRITE, pnt, C, 20); 
- 
-  write(STDOUT_FILENO, "think", 5);
+  semaphore_up();
+
+  while(C[0] ==1){
+    while(semaphore_down());
+    share(SHARE_READ, pnt, C, 20); 
+    semaphore_up();
+  }
+
+  write(STDOUT_FILENO, "go ", 3);
+
+  bool flag = false;
   int k=0;
+  char* m;
+
   while(k<100) {
+  for(int i=0; i<3; i++) m[i] = C[i] + '0';
     k++;
     think();
-    think();
-    think();
-    think();
-    think();
-    if(pickup) {
+    flag = pickup(index, n);
+    if(flag) {
         write(STDOUT_FILENO, "eat", 3);
         eat();
         eat();
-        eat();
-        eat();
-        putdown();
-        write(STDOUT_FILENO, "down - ", 7);
-        write(STDOUT_FILENO, "think", 5);
+        putdown(index, n);
     } else {
-        write(STDOUT_FILENO, "cant - ", 7);
+        write(STDOUT_FILENO, "cant", 4);
     }
   }
   exit( EXIT_SUCCESS );

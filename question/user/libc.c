@@ -159,8 +159,26 @@ int share( int fd, int pnt, int* x, int n) {
                                    
   return r;                        
 }                                  
-                                   
-                                   
-                                   
-                                   
+
+int semaphore_down() {
+    int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_SEM_DOWN)
+              : "r0" );
+
+  return r;
+}
+      
+int semaphore_up() {
+    int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_SEM_UP)
+              : "r0" );
+
+  return r;
+}
                                    

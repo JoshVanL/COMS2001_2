@@ -33,6 +33,9 @@ typedef int pid_t;
 #define SYS_SHARE_INIT ( 0x07 )
 #define SYS_SHARE      ( 0x08 )
 
+#define SYS_SEM_DOWN   ( 0x09 )
+#define SYS_SEM_UP     ( 0x10 )
+
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
 
@@ -75,5 +78,11 @@ extern int share_init();
 
 // perform INIT, WRITE or READ from shared mem, return location of that address.
 extern int  share( int fd, int pnt, int* x, int n );
+
+// signal wait for semaphore down
+extern int semaphore_down();
+
+// signal wait for semaphore up
+extern int semaphore_up();
 
 #endif
