@@ -165,20 +165,52 @@ int semaphore_down() {
   asm volatile( "svc %1     \n" // make system call sys_
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
-              : "i" (SYS_SEM_DOWN)
+              : "I" (SYS_SEM_DOWN)
               : "r0" );
 
   return r;
 }
-      
+
 int semaphore_up() {
     int r;
   asm volatile( "svc %1     \n" // make system call sys_
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
-              : "i" (SYS_SEM_UP)
+              : "I" (SYS_SEM_UP)
+              : "r0" );
+
+  return r;
+}
+
+int curr_timer() {
+    int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_TIME)
               : "r0" );
 
   return r;
 }
                                    
+int console_command() {
+    int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_CONS_COM)
+              : "r0" );
+
+  return r;
+}
+
+int killall() {
+    int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_KILL_ALL)
+              : "r0" );
+
+  return r;
+}

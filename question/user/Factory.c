@@ -52,6 +52,20 @@ void main_Factory(int argc, char* argv[]) {
   
   }
 
+  int sleep = 0;
+
+  while(true) {
+    sleep = curr_timer() + 3;
+    while(curr_timer() < sleep);
+
+    while(semaphore_down());
+    share(SHARE_READ, 0, C, 20);
+    for(int i=0; i<6; i++) {
+      p[i] = C[i] + '0';
+    }
+    write(STDOUT_FILENO, p, n);
+  }
+
   exit( EXIT_SUCCESS );
 }
  

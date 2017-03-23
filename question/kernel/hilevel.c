@@ -2,10 +2,11 @@
 
 
 pcb_t pcb[ 50  ], *current = NULL;
-int priority[ 20 ];
+int priority[ 50 ];
 uint32_t count=0;
 uint32_t icurrent = 0;
 uint32_t pidNum = 0;
+uint32_t timer =0;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -18,17 +19,18 @@ void scheduler( ctx_t* ctx  ) {
   int32_t next = 0;
   int hiPriority = priority[0];
 
-  for (uint32_t i = 1; i <= count; i++) {
-     if (priority[i] > hiPriority) {
+  for (uint32_t i = 0; i <= count; i++) {
+    if (priority[i] > hiPriority) {
         hiPriority = priority[i];
         next = i;
         changed=true;
-      } else {
-        priority[i] += 1;
-      }
+    }
   }
 
-  priority[next] -= 4;
+  for (uint32_t i = 0; i <= count; i++) priority[i] +=1;
+
+  priority[next] = 0;
+
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ next ].ctx, sizeof( ctx_t  )  );
   current = &pcb[ next ];
@@ -63,6 +65,20 @@ void printZero() {
   return;
 }
 
+void change_toConsole ( ctx_t* ctx) {
+ // PL011_putc( UART0, 'H', true ); 
+ printZero();
+
+ // memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+ // memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+ // current = &pcb[ 0 ];
+ // icurrent = 0;
+
+  return;
+
+}
+
+
 void hilevel_handler_rst(  ctx_t* ctx ) {
   /* Configure the mechanism for interrupt handling by
   *
@@ -96,8 +112,8 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   current = &pcb[ 0  ]; 
   memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
 
-  printZero();
-
+  PL011_putc( UART0, '\n', true ); 
+  for(uint32_t i=0; i<20; i++) PL011_putc( UART0, '~', true ); 
   return;
 }
 
@@ -109,6 +125,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if( id == GIC_SOURCE_TIMER0 ) {
     TIMER0->Timer1IntClr = 0x01;
+    timer++;
   }
   scheduler(ctx);
 
@@ -156,30 +173,46 @@ void do_Exit (ctx_t* ctx ) {
   current = &pcb [ icurrent ];
   PL011_putc( UART0, 'H', true );
 
-  printZero();
   return;
 }
 
 void do_Kill( ctx_t* ctx ) {
   uint32_t P;
+  bool valid = false;
   uint32_t pid = ctx->gpr[ 0 ];
   for(uint32_t i = 1; i <=count; i++) {
     if (pid == pcb[ i ].pid) {       
+      valid = true;
       P = i;
       break;
     }
   }
-  for (uint32_t i = P; i<count; i++) {
-    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  );
-    memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
-    priority[i] = priority[i+1];
+  if(valid) {
+    for (uint32_t i = P; i<count; i++) {
+      memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  );
+      memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
+      priority[i] = priority[i+1];
+    }
+    count--;
+    icurrent = 0;
+    PL011_putc( UART0, 'H', true );
+  } else {
+    PL011_putc( UART0, 'E', true );
   }
-  count--;
-  icurrent = 0;
-  PL011_putc( UART0, 'H', true );
-  printZero();
   return;
 }
+
+void do_KillAll (ctx_t* ctx) {
+  for(uint32_t i=count; i>0; i--) {
+      ctx->gpr[ 0 ] = i;
+      do_Kill( ctx);
+  }
+  PL011_putc( UART0, 'A', true );
+
+  return;
+}
+
+    
 
 bool flag_share = false;
 
@@ -255,11 +288,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       }
       break;
     }
-    default   : { // 0x?? => unknown/unsupported
-      PL011_putc( UART0, 'E', true );
-      PL011_putc( UART0, 'R', true );
-      break;
-    }
     case 0x09 : { //Semaphore down
       if (flag_share) {
           ctx->gpr[0] = 0;
@@ -271,8 +299,26 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x10 : { //Semaphore up
-      flag_share = 0;
+      flag_share = false;
       ctx->gpr[0] = 1; 
+      break;
+    }
+    case 0x11 : { //Return timer val
+      ctx->gpr[0] = timer;
+      break;
+    }
+    case 0x12 : { //Console has made command
+      change_toConsole(ctx);
+      break;
+    }
+    case 0x13 : { //Console has made command
+      PL011_putc( UART0, 'K', true );
+      do_KillAll(ctx);
+      break;
+    }
+    default   : { // 0x?? => unknown/unsupported
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'R', true );
       break;
     }
   

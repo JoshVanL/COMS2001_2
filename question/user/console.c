@@ -16,6 +16,7 @@ void gets( char* x, int n ) {
   }
 }
 
+
 /* Since we lack a *real* loader (as a result of lacking a storage 
  * medium to store program images), the following approximates one:
  * given a program name, from the set of programs statically linked
@@ -27,6 +28,7 @@ extern void main_P4();
 extern void main_P5(); 
 extern void main_Factory();
 extern void main_Test();
+extern void main_Test2();
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
@@ -43,6 +45,9 @@ void* load( char* x ) {
   }
   else if( 0 == strcmp( x, "Test" ) ) {
     return &main_Test;
+  }
+  else if( 0 == strcmp( x, "Test2" ) ) {
+    return &main_Test2;
   }
 
   return NULL;
@@ -64,6 +69,8 @@ void main_console() {
 
   while( 1 ) {
     puts( "shell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
+
+    console_command();
 
     if     ( 0 == strcmp( p, "fork" ) ) {
       void* addr = load( strtok( NULL, " " ) );
@@ -90,6 +97,9 @@ void main_console() {
       int   s   = atoi( strtok( NULL, " " ) );
 
       kill( pid, s );
+    } 
+    else if( 0 == strcmp( p, "killall" ) ) {
+      killall();
     } 
     else {
       puts( "unknown command\n", 16 );

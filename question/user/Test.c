@@ -1,18 +1,18 @@
 #include "Test.h"
 
-void main_Test() {
-  char C[16];
-  char* O[2];
-  *O = "BB";
+void main_Test(int argc, char* argv[]) {
 
-  for (int i = 0; i < 16; i++) {
-      C[i] = 1;
-  }
+  write(STDOUT_FILENO, "1", 1);
+  int C[20];
 
-  write(SHARED_MEM, *O, 2);
-  read(SHARED_MEM, *O, 2);
-  write( STDOUT_FILENO, *O, 2 );
- 
+  for(int i=0; i<20; i++) C[i] = 0;
+
+  while(semaphore_down());
+  share(SHARE_WRITE, 0, C, 20);
+  semaphore_up();
+
+
+  write(STDOUT_FILENO, "2", 1);
 
   exit( EXIT_SUCCESS );
 }

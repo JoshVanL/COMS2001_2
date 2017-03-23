@@ -36,6 +36,10 @@ typedef int pid_t;
 #define SYS_SEM_DOWN   ( 0x09 )
 #define SYS_SEM_UP     ( 0x10 )
 
+#define SYS_TIME       ( 0x11 )
+#define SYS_CONS_COM   ( 0x12 )
+#define SYS_KILL_ALL   ( 0x13 )
+
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
 
@@ -47,7 +51,7 @@ typedef int pid_t;
 #define STDERR_FILENO ( 2 )
 
 #define   SHARE_WRITE ( 0 )
-#define    SHARE_READ ( 1 )
+#define   SHARE_READ  ( 1 )
 
 
 // convert ASCII string x into integer r
@@ -84,5 +88,14 @@ extern int semaphore_down();
 
 // signal wait for semaphore up
 extern int semaphore_up();
+
+// return timer value
+extern int curr_timer();
+
+// Switch program to console for command
+extern int console_command();
+
+// Kill all programs
+extern int kill_all();
 
 #endif

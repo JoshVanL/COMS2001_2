@@ -1,19 +1,5 @@
 #include "Philosopher.h"
 
-int p( uint32_t x ) {
-  if ( !( x & 1 ) || ( x < 2 ) ) {
-    return ( x == 2 );
-  }
-
-  for( uint32_t d = 3; ( d * d ) <= x ; d += 2 ) {
-    if( !( x % d ) ) {
-      return 0;
-    }
-  }
-
-  return 1;
-}
-
 bool pickup(int index, int n) {
 
   int C[20]; 
@@ -24,15 +10,13 @@ bool pickup(int index, int n) {
 
   if(C[index] == 0 && C[(index+1)%3] == 0) {
       C[index] = 1;
-      C[(index+1)%3] = 1;
+      C[(index+1)%5] = 1;
 
       while(semaphore_down());
       share(SHARE_WRITE, 0, C, 20);
       semaphore_up();
 
       return true;
-  } else {
-      write(STDOUT_FILENO, "cant - ", 7);
   }
   return false;
 }
@@ -46,7 +30,7 @@ void putdown(int index, int n) {
   semaphore_up();
 
   C[index] = 0;
-  C[(index+1)%3] = 0;
+  C[(index+1)%5] = 0;
 
   while(semaphore_down());
   share(SHARE_WRITE, 0, C, 20);
@@ -56,24 +40,20 @@ void putdown(int index, int n) {
 }
 
 void think() {
-  int m = 0;
-    uint32_t lo = 1 <<  8;
-    uint32_t hi = 1 << 16;
 
-    for( uint32_t x = lo; x < hi; x++ ) {
-      int r = p( x ); 
-    }
+  int sleep = curr_timer() + 3;
+  while(curr_timer() < sleep);
+
   return;
 }
 
 void eat() {
-    uint32_t lo = 1 <<  8;
-    uint32_t hi = 1 << 16;
 
-    for( uint32_t x = lo; x < hi; x++ ) {
-      int r = p( x ); 
-    }
+  int sleep = curr_timer() + 3;
+  while(curr_timer() < sleep);
+
   return;
+
 }
 
 void main_Philosopher(int argc, char* argv[]) {
@@ -120,6 +100,7 @@ void main_Philosopher(int argc, char* argv[]) {
   while(k<100) {
   for(int i=0; i<3; i++) m[i] = C[i] + '0';
     k++;
+    write(STDOUT_FILENO, "think", 5);
     think();
     flag = pickup(index, n);
     if(flag) {
@@ -128,7 +109,18 @@ void main_Philosopher(int argc, char* argv[]) {
         eat();
         putdown(index, n);
     } else {
-        write(STDOUT_FILENO, "cant", 4);
+        write(STDOUT_FILENO, "cant -> ", 8);
+
+        for(int i=0; i<n; i++) {
+          m[i] = C[i] + '0';
+        }
+        write(STDOUT_FILENO, m, index-1);
+        write(STDOUT_FILENO, "[", 1);
+        m += index;
+        for(int i=index; i<n; i++){
+            write(STDOUT_FILENO, m, 1);
+            m++;
+        }
     }
   }
   exit( EXIT_SUCCESS );
