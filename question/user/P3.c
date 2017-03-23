@@ -14,11 +14,8 @@ int is_prime( uint32_t x ) {
   return 1;
 }
 
-void main_P3(int argc, char* argv[]) {
-   char p = argc + '0'; 
-  write( STDOUT_FILENO, &p, 1 );
-  for(int i=0; i< argc; i++) write( STDOUT_FILENO, argv[i], 10 );
-  for( int i = 0; i < 20; i++ ) {
+void main_P3() {
+  for( int i = 0; i < 50; i++ ) {
     write( STDOUT_FILENO, "P3", 2 );
 
     uint32_t lo = 1 <<  8;

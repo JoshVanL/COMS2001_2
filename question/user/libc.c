@@ -109,9 +109,9 @@ void exit( int x ) {
 void exec( const void* x, void* arg ) {
   asm volatile( "mov r0, %1 \n" // assign r0 = x
                 "mov r1, %2 \n" //assign r1 = arg
-                "svc %0     \n" // make system call SYS_EXEC
+                "svc %0     \n" // make system call sys_exec
               :
-              : "I" (SYS_EXEC), "r" (x), "r" (arg)
+              : "i" (SYS_EXEC), "r" (x), "r" (arg)
               : "r0", "r1" );
 
   return;
@@ -122,10 +122,10 @@ int kill( int pid, int x ) {
 
   asm volatile( "mov r0, %2 \n" // assign r0 =  pid
                 "mov r1, %3 \n" // assign r1 =    x
-                "svc %1     \n" // make system call SYS_KILL
+                "svc %1     \n" // make system call sys_kill
                 "mov %0, r0 \n" // assign r0 =    r
               : "=r" (r) 
-              : "I" (SYS_KILL), "r" (pid), "r" (x)
+              : "i" (SYS_KILL), "r" (pid), "r" (x)
               : "r0", "r1" );
 
   
@@ -211,6 +211,29 @@ int killall() {
               : "=r" (r) 
               : "i" (SYS_KILL_ALL)
               : "r0" );
+
+  return r;
+}
+
+int processes_count() {
+  int r;
+  asm volatile( "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_PS_COUNT)
+              : "r0" );
+
+  return r;
+}
+
+int processes_pid(int n) {
+  int r;
+  asm volatile( "mov r0, %2 \n"  //assign r0 = n
+                "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_PS_PID), "r" (n)
+              : "r0", "r1" );
 
   return r;
 }

@@ -101,6 +101,29 @@ void main_console() {
     else if( 0 == strcmp( p, "killall" ) ) {
       killall();
     } 
+    else if( 0 == strcmp( p, "ps" ) ) {
+        char* c;
+        int p;
+        int ps = processes_count();
+
+        puts ( "pids [", 6);
+        itoa(c, ps);
+        puts (c, 2);
+        puts ( "] :", 3);
+
+        for(int i =0; i<ps; i++) {
+          p = processes_pid(i);
+          puts(" ", 1);
+          if (p == 0) puts("0", 1);
+          else {
+            itoa(c, p);
+            puts(c, 1);
+          }
+        }
+        puts("\n", 1);
+    } 
+    else if( 0 == strcmp( p, NULL ) ) {
+    }
     else {
       puts( "unknown command\n", 16 );
     }

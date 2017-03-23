@@ -7,6 +7,7 @@ uint32_t count=0;
 uint32_t icurrent = 0;
 uint32_t pidNum = 0;
 uint32_t timer =0;
+uint32_t active_pids[50];
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -19,7 +20,7 @@ void scheduler( ctx_t* ctx  ) {
   int32_t next = 0;
   int hiPriority = priority[0];
 
-  for (uint32_t i = 0; i <= count; i++) {
+  for (uint32_t i = 1; i < count; i++) {
     if (priority[i] > hiPriority) {
         hiPriority = priority[i];
         next = i;
@@ -27,7 +28,7 @@ void scheduler( ctx_t* ctx  ) {
     }
   }
 
-  for (uint32_t i = 0; i <= count; i++) priority[i] +=1;
+  for (uint32_t i = 0; i < count; i++) priority[i] +=1;
 
   priority[next] = 0;
 
@@ -89,7 +90,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   * - enabling IRQ interrupts.
   */
   
-  TIMER0->Timer1Load  = 0x00050000; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Load  = 0x00020000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
@@ -111,6 +112,10 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   int_enable_irq(); icurrent =0; //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   current = &pcb[ 0  ]; 
   memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
+
+  active_pids[0] =0;
+
+  count=1;
 
   PL011_putc( UART0, '\n', true ); 
   for(uint32_t i=0; i<20; i++) PL011_putc( UART0, '~', true ); 
@@ -147,8 +152,8 @@ void do_Exec (ctx_t* ctx ) {
   char* argv[argc];
   for(int i=0; i<argc; i++)argv[i] = stra[i];
 
-  count++;
   pidNum++;
+  active_pids[count] = pidNum;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
   pcb[ count  ].pid      = pidNum;
   pcb[ count  ].ctx.cpsr = 0x50;
@@ -156,10 +161,9 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
   pcb[ count  ].ctx.gpr[0]   = ( uint32_t  )( argc );    
   pcb[ count  ].ctx.gpr[1]   = ( uint32_t  )( argv );    
+  count++;
 
   priority[count] = 2;
-
-  //scheduler(ctx);
   return;
 }
 
@@ -167,7 +171,12 @@ void do_Exec (ctx_t* ctx ) {
 void do_Exit (ctx_t* ctx ) {
   for (uint32_t i = icurrent; i<count; i++) {
     //pcb[i].pid = i;
-    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  ); memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  ); priority[i] = priority[i+1]; } count--;
+    memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  ); 
+    priority[i] = priority[i+1]; 
+    active_pids[i] = active_pids[i+1];
+  } 
+
+  count--;
   icurrent = 0;
   memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
   current = &pcb [ icurrent ];
@@ -180,7 +189,7 @@ void do_Kill( ctx_t* ctx ) {
   uint32_t P;
   bool valid = false;
   uint32_t pid = ctx->gpr[ 0 ];
-  for(uint32_t i = 1; i <=count; i++) {
+  for(uint32_t i = 1; i <count; i++) {
     if (pid == pcb[ i ].pid) {       
       valid = true;
       P = i;
@@ -192,6 +201,7 @@ void do_Kill( ctx_t* ctx ) {
       memcpy( &pcb[ i  ].pid, &pcb[ i+1 ].pid, sizeof( ctx_t  )  );
       memcpy( &pcb[ i  ].ctx, &pcb[ i+1 ].ctx, sizeof( ctx_t  )  );
       priority[i] = priority[i+1];
+      active_pids[i] = active_pids[i+1];
     }
     count--;
     icurrent = 0;
@@ -203,8 +213,8 @@ void do_Kill( ctx_t* ctx ) {
 }
 
 void do_KillAll (ctx_t* ctx) {
-  for(uint32_t i=count; i>0; i--) {
-      ctx->gpr[ 0 ] = i;
+  for(uint32_t i=count-1; i>0; i--) {
+      ctx->gpr[ 0 ] = active_pids[i];
       do_Kill( ctx);
   }
   PL011_putc( UART0, 'A', true );
@@ -290,17 +300,16 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x09 : { //Semaphore down
       if (flag_share) {
-          ctx->gpr[0] = 0;
+          ctx->gpr[0] = 1;
       }
       else {
           flag_share = true;
-          ctx->gpr[0] = 1;
+          ctx->gpr[0] = 0;
      }
       break;
     }
     case 0x10 : { //Semaphore up
       flag_share = false;
-      ctx->gpr[0] = 1; 
       break;
     }
     case 0x11 : { //Return timer val
@@ -316,6 +325,16 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       do_KillAll(ctx);
       break;
     }
+    case 0x14 : { //Get processes count
+      ctx->gpr[0] = count;
+      break;
+    }
+    case 0x15 : { //Get processes pid
+      int n = ctx->gpr[0];
+      ctx->gpr[0] = active_pids[n];
+
+      break;
+    }
     default   : { // 0x?? => unknown/unsupported
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'R', true );
@@ -325,5 +344,4 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   }
 
   return;
-
 }

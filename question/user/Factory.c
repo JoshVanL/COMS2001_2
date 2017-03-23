@@ -37,15 +37,18 @@ void main_Factory(int argc, char* argv[]) {
       }
 
       C[19]=0;
+
       while(semaphore_down());
       share(SHARE_WRITE, pnt, C, 20);
       semaphore_up();
+
       write(STDOUT_FILENO, ">> ", 3);
       itoa(p, i+1);
       memcpy(arg[0], p, sizeof(p));
     }
-  
+ 
     C[0] = 0;
+
     while(semaphore_down());
     share(SHARE_WRITE, pnt, C, 20);
     semaphore_up();
@@ -60,6 +63,8 @@ void main_Factory(int argc, char* argv[]) {
 
     while(semaphore_down());
     share(SHARE_READ, 0, C, 20);
+    semaphore_up();
+
     for(int i=0; i<6; i++) {
       p[i] = C[i] + '0';
     }

@@ -8,7 +8,7 @@ bool pickup(int index, int n) {
   share(SHARE_READ, 0, C, 20);
   semaphore_up();
 
-  if(C[index] == 0 && C[(index+1)%3] == 0) {
+  if(C[index] == 0 && C[(index+1)%5] == 0) {
       C[index] = 1;
       C[(index+1)%5] = 1;
 
@@ -96,6 +96,8 @@ void main_Philosopher(int argc, char* argv[]) {
   bool flag = false;
   int k=0;
   char* m;
+  char* o;
+  int l =0;
 
   while(k<100) {
   for(int i=0; i<3; i++) m[i] = C[i] + '0';
@@ -117,10 +119,13 @@ void main_Philosopher(int argc, char* argv[]) {
         write(STDOUT_FILENO, m, index-1);
         write(STDOUT_FILENO, "[", 1);
         m += index;
+        l = 0;
         for(int i=index; i<n; i++){
-            write(STDOUT_FILENO, m, 1);
-            m++;
+            o[k] = m[i];
+            l++;
         }
+        write(STDOUT_FILENO, o, n-index);
+        write(STDOUT_FILENO, "]", 1);
     }
   }
   exit( EXIT_SUCCESS );

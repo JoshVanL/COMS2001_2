@@ -39,6 +39,8 @@ typedef int pid_t;
 #define SYS_TIME       ( 0x11 )
 #define SYS_CONS_COM   ( 0x12 )
 #define SYS_KILL_ALL   ( 0x13 )
+#define SYS_PS_COUNT   ( 0x14 )
+#define SYS_PS_PID     ( 0x15 )
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -96,6 +98,12 @@ extern int curr_timer();
 extern int console_command();
 
 // Kill all programs
-extern int kill_all();
+extern int killall();
+
+// Get number of active processes
+extern int processes_count();
+
+// Get the pid of a process
+extern int processes_pid(int n);
 
 #endif
