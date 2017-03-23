@@ -256,7 +256,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x03 : { //Fork()
       PL011_putc( UART0, 'F', true );
-      tos_userProgram = &tos_userProgram + 0x00010000; 
+      tos_userProgram += 0x00010000; 
       break;
     }
     case 0x04 : {  //Exit()

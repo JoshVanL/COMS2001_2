@@ -27,7 +27,7 @@ void main_Factory(int argc, char* argv[]) {
     semaphore_up();
 
     for(int i=0; i<n; i++) {
-      fork();
+      pid_t pid  = fork();
       exec(addr, arg);
 
       while(C[19] ==0){
