@@ -8,9 +8,9 @@ bool pickup(int index, int n) {
   share(SHARE_READ, 0, C, 20);
   semaphore_up();
 
-  if(C[index] == 0 && C[(index+1)%5] == 0) {
+  if(C[index] == 0 && C[(index+1)%n] == 0) {
       C[index] = 1;
-      C[(index+1)%5] = 1;
+      C[(index+1)%n] = 1;
 
       while(semaphore_down());
       share(SHARE_WRITE, 0, C, 20);
@@ -30,7 +30,7 @@ void putdown(int index, int n) {
   semaphore_up();
 
   C[index] = 0;
-  C[(index+1)%5] = 0;
+  C[(index+1)%n] = 0;
 
   while(semaphore_down());
   share(SHARE_WRITE, 0, C, 20);
@@ -39,17 +39,17 @@ void putdown(int index, int n) {
   return;
 }
 
-void think() {
+void think(int n) {
 
-  int sleep = curr_timer() + 3;
+  int sleep = curr_timer() + 3+n;
   while(curr_timer() < sleep);
 
   return;
 }
 
-void eat() {
+void eat(int n) {
 
-  int sleep = curr_timer() + 3;
+  int sleep = curr_timer() + 3+n;
   while(curr_timer() < sleep);
 
   return;
@@ -103,29 +103,15 @@ void main_Philosopher(int argc, char* argv[]) {
   for(int i=0; i<3; i++) m[i] = C[i] + '0';
     k++;
     write(STDOUT_FILENO, "think", 5);
-    think();
+    think(n);
     flag = pickup(index, n);
+
     if(flag) {
         write(STDOUT_FILENO, "eat", 3);
-        eat();
-        eat();
+        eat(n);
         putdown(index, n);
     } else {
         write(STDOUT_FILENO, "cant -> ", 8);
-
-        for(int i=0; i<n; i++) {
-          m[i] = C[i] + '0';
-        }
-        write(STDOUT_FILENO, m, index-1);
-        write(STDOUT_FILENO, "[", 1);
-        m += index;
-        l = 0;
-        for(int i=index; i<n; i++){
-            o[k] = m[i];
-            l++;
-        }
-        write(STDOUT_FILENO, o, n-index);
-        write(STDOUT_FILENO, "]", 1);
     }
   }
   exit( EXIT_SUCCESS );

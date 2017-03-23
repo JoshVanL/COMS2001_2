@@ -103,22 +103,19 @@ void main_console() {
     } 
     else if( 0 == strcmp( p, "ps" ) ) {
         char* c;
-        int p;
         int ps = processes_count();
 
         puts ( "pids [", 6);
         itoa(c, ps);
         puts (c, 2);
-        puts ( "] :", 3);
+        puts ( "] : ", 4);
+        PL011_putc( UART1, '0', true ); 
 
-        for(int i =0; i<ps; i++) {
-          p = processes_pid(i);
+        for(int i =1; i<ps; i++) {
+          int p = processes_pid(i);
           puts(" ", 1);
-          if (p == 0) puts("0", 1);
-          else {
-            itoa(c, p);
-            puts(c, 1);
-          }
+          itoa(c, p);
+          puts(c, 2);
         }
         puts("\n", 1);
     } 

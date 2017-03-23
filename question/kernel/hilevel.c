@@ -301,6 +301,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x09 : { //Semaphore down
       if (flag_share) {
           ctx->gpr[0] = 1;
+          if (priority[icurrent] >0) priority[icurrent]-=1;
       }
       else {
           flag_share = true;
@@ -330,6 +331,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x15 : { //Get processes pid
+
       int n = ctx->gpr[0];
       ctx->gpr[0] = active_pids[n];
 
