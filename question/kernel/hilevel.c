@@ -13,6 +13,7 @@ uint16_t fb[600][800];
 
 extern void     main_console();
 extern uint32_t tos_console(); 
+extern char font[96][6];
 
 extern uint32_t tos_shared();
 uint32_t* sharred_current = (uint32_t*) (tos_shared);
@@ -127,6 +128,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   
   GICC0->PMR          = 0x000000F0; // unmask all            interrupts
   GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
+  GICD0->ISENABLER1 |= 0x00300000; // enable PS2          interrupts
   GICC0->CTLR         = 0x00000001; // enable GIC interface
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
   
@@ -138,7 +140,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   priority[0] = 1;
   
-  int_enable_irq(); icurrent =0; //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
+  int_enable_irq(); //current = &pcb[ 0  ]; memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
   current = &pcb[ 0  ]; 
   memcpy( ctx, &current->ctx, sizeof( ctx_t  )  );
 
@@ -154,9 +156,10 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   for( int i = 0; i < 600; i++ ) {
     for( int j = 0; j < 800; j++ ) {
-      fb[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
+      fb[ i ][ j ] = 0x9CEA;
     }
   }
+  icurrent =0;
 
   return;
 }
@@ -165,25 +168,31 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
-
+  char* m = font[0];
 
 
   if     ( id == GIC_SOURCE_PS20 ) {
     uint8_t x = PL050_getc( PS20 );
-    PL011_putc( UART0, '0',                      true );  
     PL011_putc( UART0, '<',                      true ); 
     PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
     PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
     PL011_putc( UART0, '>',                      true ); 
+    int m =0;
+    for(int k=0; k<5; k++) {
+        for( int j = 20; j < 80; j++ ) {
+          fb[ m ][ j+m ] = font[2][k];
+        }
+      m+=10;
+    }
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
 
-    PL011_putc( UART0, '1',                      true );  
-    PL011_putc( UART0, '<',                      true ); 
-    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    PL011_putc( UART0, '>',                      true ); 
+    //PL011_putc( UART0, '1',                      true );  
+    //PL011_putc( UART0, '<',                      true ); 
+    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    //PL011_putc( UART0, '>',                      true ); 
   }
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
