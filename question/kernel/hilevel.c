@@ -9,6 +9,8 @@ uint32_t pidNum = 0;
 uint32_t timer =0;
 uint32_t active_pids[50];
 
+uint16_t fb[600][800];
+
 extern void     main_console();
 extern uint32_t tos_console(); 
 
@@ -67,20 +69,47 @@ void printZero() {
 }
 
 void change_toConsole ( ctx_t* ctx) {
- // PL011_putc( UART0, 'H', true ); 
- printZero();
-
- // memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
- // memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
- // current = &pcb[ 0 ];
- // icurrent = 0;
-
+  printZero();
   return;
 
 }
 
 
 void hilevel_handler_rst(  ctx_t* ctx ) {
+
+  SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
+  LCD->LCDTiming0    = 0x1313A4C4; // per per Table 4.3 of datasheet
+  LCD->LCDTiming1    = 0x0505F657; // per per Table 4.3 of datasheet
+  LCD->LCDTiming2    = 0x071F1800; // per per Table 4.3 of datasheet
+
+  LCD->LCDUPBASE     = ( uint32_t )( &fb );
+
+  LCD->LCDControl    = 0x00000020; // select TFT   display type
+  LCD->LCDControl   |= 0x00000008; // select 16BPP display mode
+  LCD->LCDControl   |= 0x00000800; // power-on LCD controller
+  LCD->LCDControl   |= 0x00000001; // enable   LCD controller
+
+  /* Configure the mechanism for interrupt handling by
+   *
+   * - configuring then enabling PS/2 controllers st. an interrupt is
+   *   raised every time a byte is subsequently received,
+   * - configuring GIC st. the selected interrupts are forwarded to the 
+   *   processor via the IRQ interrupt signal, then
+   * - enabling IRQ interrupts.
+   */
+
+  PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+  PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+
+  uint8_t ack;
+
+        PL050_putc( PS20, 0xF4 );  // transmit PS/2 enable command
+  ack = PL050_getc( PS20       );  // receive  PS/2 acknowledgement
+        PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
+  ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
+
   /* Configure the mechanism for interrupt handling by
   *
   * - configuring timer st. it raises a (periodic) interrupt for each 
@@ -90,7 +119,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   * - enabling IRQ interrupts.
   */
   
-  TIMER0->Timer1Load  = 0x00020000; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Load  = 0x00030000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
@@ -119,6 +148,16 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   PL011_putc( UART0, '\n', true ); 
   for(uint32_t i=0; i<20; i++) PL011_putc( UART0, '~', true ); 
+
+
+  // Write example red/green/blue test pattern into the frame buffer.
+
+  for( int i = 0; i < 600; i++ ) {
+    for( int j = 0; j < 800; j++ ) {
+      fb[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
+    }
+  }
+
   return;
 }
 
@@ -126,6 +165,26 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
+
+
+
+  if     ( id == GIC_SOURCE_PS20 ) {
+    uint8_t x = PL050_getc( PS20 );
+    PL011_putc( UART0, '0',                      true );  
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true ); 
+  }
+  else if( id == GIC_SOURCE_PS21 ) {
+    uint8_t x = PL050_getc( PS21 );
+
+    PL011_putc( UART0, '1',                      true );  
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true ); 
+  }
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if( id == GIC_SOURCE_TIMER0 ) {
@@ -150,7 +209,7 @@ void do_Exec (ctx_t* ctx ) {
   uint32_t argc = 0;
   while(stra[argc] != NULL) argc++;
   char* argv[argc];
-  for(int i=0; i<argc; i++)argv[i] = stra[i];
+  for(int i=0; i<3; i++)argv[i] = stra[i];
 
   pidNum++;
   active_pids[count] = pidNum;
@@ -225,6 +284,7 @@ void do_KillAll (ctx_t* ctx) {
     
 
 bool flag_share = false;
+uint32_t share_loc[20] = {0};
 
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   /* Each time execution reaches this point, we are tasked with handling
@@ -279,62 +339,72 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x07 : { //Share init
       sharred_current += 0x00010000;
-      ctx->gpr[0] = (uint32_t) (sharred_current);
+      share_loc[0] +=1;
+      share_loc[share_loc[0]] = (uint32_t) sharred_current;
+      ctx->gpr[0] = share_loc[0];
       break;
     }
     case 0x08 : { //Share() Read-Write
+      priority[icurrent] = 20;
       int   fd = ( int    )( ctx->gpr[ 0  ]  );
       uint32_t pnt = ( uint32_t  )( ctx->gpr[ 1  ]  );
       uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
       uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
-      uint32_t* curr = (uint32_t*) (sharred_current);
-      //uint32_t* curr = (uint32_t*) (pnt);
+
+      uint32_t* curr = (uint32_t*) (share_loc[pnt]);
     
       if (fd == 0) {
          memcpy(&curr[0], x,  n*sizeof(int));
+         priority[icurrent] = 0;
       }
       if (fd == 1) {
         memcpy(x, &curr[0], n*sizeof(int));
+        priority[icurrent] = 0;
       }
+      flag_share = false;
+      priority[icurrent] = 0;
       break;
     }
-    case 0x09 : { //Semaphore down
+    case 0x09 : { //Semaphore
       if (flag_share) {
           ctx->gpr[0] = 1;
-          if (priority[icurrent] >0) priority[icurrent]-=1;
+          if (priority[icurrent] >1) priority[icurrent]-=2;
       }
       else {
           flag_share = true;
           ctx->gpr[0] = 0;
+          priority[icurrent] += 10;
      }
       break;
     }
-    case 0x10 : { //Semaphore up
-      flag_share = false;
-      break;
-    }
-    case 0x11 : { //Return timer val
+    case 0x10 : { //Return timer val
       ctx->gpr[0] = timer;
       break;
     }
-    case 0x12 : { //Console has made command
+    case 0x11 : { //Console has made command
       change_toConsole(ctx);
       break;
     }
-    case 0x13 : { //Console has made command
+    case 0x12 : { //Console has made command
       PL011_putc( UART0, 'K', true );
       do_KillAll(ctx);
       break;
     }
-    case 0x14 : { //Get processes count
+    case 0x13 : { //Get processes count
       ctx->gpr[0] = count;
       break;
     }
-    case 0x15 : { //Get processes pid
+    case 0x14 : { //Get processes pid
 
       int n = ctx->gpr[0];
       ctx->gpr[0] = active_pids[n];
 
+      break;
+    }
+    case 0x15 : { //Set current processs priority
+
+      int n = ctx->gpr[0];
+      priority[icurrent] = n;
       break;
     }
     default   : { // 0x?? => unknown/unsupported

@@ -45,6 +45,8 @@ void itoa( char* r, int x ) {
   return;
 }
 
+
+
 void yield() {
   asm volatile( "svc %0     \n" // make system call SYS_YIELD
               :
@@ -160,23 +162,12 @@ int share( int fd, int pnt, int* x, int n) {
   return r;                        
 }                                  
 
-int semaphore_down() {
+int semaphore() {
     int r;
   asm volatile( "svc %1     \n" // make system call sys_
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
               : "I" (SYS_SEM_DOWN)
-              : "r0" );
-
-  return r;
-}
-
-int semaphore_up() {
-    int r;
-  asm volatile( "svc %1     \n" // make system call sys_
-                "mov %0, r0 \n" // assign r  = r0
-              : "=r" (r) 
-              : "I" (SYS_SEM_UP)
               : "r0" );
 
   return r;
@@ -233,6 +224,18 @@ int processes_pid(int n) {
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
               : "i" (SYS_PS_PID), "r" (n)
+              : "r0", "r1" );
+
+  return r;
+}
+
+int setPriority(int n) {
+  int r;
+  asm volatile( "mov r0, %2 \n"  //assign r0 = n
+                "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_SET_PRI), "r" (n)
               : "r0", "r1" );
 
   return r;

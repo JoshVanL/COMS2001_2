@@ -32,15 +32,14 @@ typedef int pid_t;
 #define SYS_KILL       ( 0x06 )
 #define SYS_SHARE_INIT ( 0x07 )
 #define SYS_SHARE      ( 0x08 )
-
 #define SYS_SEM_DOWN   ( 0x09 )
-#define SYS_SEM_UP     ( 0x10 )
 
-#define SYS_TIME       ( 0x11 )
-#define SYS_CONS_COM   ( 0x12 )
-#define SYS_KILL_ALL   ( 0x13 )
-#define SYS_PS_COUNT   ( 0x14 )
-#define SYS_PS_PID     ( 0x15 )
+#define SYS_TIME       ( 0x10 )
+#define SYS_CONS_COM   ( 0x11 )
+#define SYS_KILL_ALL   ( 0x12 )
+#define SYS_PS_COUNT   ( 0x13 )
+#define SYS_PS_PID     ( 0x14 )
+#define SYS_SET_PRI    ( 0x15 )
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -86,10 +85,7 @@ extern int share_init();
 extern int  share( int fd, int pnt, int* x, int n );
 
 // signal wait for semaphore down
-extern int semaphore_down();
-
-// signal wait for semaphore up
-extern int semaphore_up();
+extern int semaphore();
 
 // return timer value
 extern int curr_timer();
@@ -105,5 +101,8 @@ extern int processes_count();
 
 // Get the pid of a process
 extern int processes_pid(int n);
+
+// Set current process priority 
+extern int setPriority(int n);
 
 #endif

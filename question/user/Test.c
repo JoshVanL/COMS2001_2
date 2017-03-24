@@ -2,17 +2,23 @@
 
 void main_Test(int argc, char* argv[]) {
 
-  write(STDOUT_FILENO, "1", 1);
   int C[20];
+  int pnt = share_init();
 
-  for(int i=0; i<20; i++) C[i] = 0;
+  for(int i=0; i<20; i++) C[i] = 1;
 
-  while(semaphore_down());
-  share(SHARE_WRITE, 0, C, 20);
-  semaphore_up();
+  if(C[0] ==1 )write(STDOUT_FILENO, "Y", 1);
 
+  while(semaphore());
+  share(SHARE_WRITE, pnt, C, 20);
 
-  write(STDOUT_FILENO, "2", 1);
+  C[0] = 2;
+  if(C[0] ==2) write(STDOUT_FILENO, "Y", 1);
+
+  while(semaphore());
+  share(SHARE_READ, pnt, C, 20);
+
+  if(C[0] ==1 )write(STDOUT_FILENO, "Y", 1);
 
   exit( EXIT_SUCCESS );
 }

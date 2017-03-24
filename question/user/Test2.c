@@ -8,7 +8,7 @@ void main_Test2(int argc, char* argv[]) {
   
   write(STDOUT_FILENO, "3", 1);
   
-  while(!semaphore_down());
+  while(semaphore());
   share(SHARE_WRITE, 0, C, 20);
 
 
