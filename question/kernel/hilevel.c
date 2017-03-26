@@ -11,6 +11,9 @@ uint32_t active_pids[50];
 
 uint16_t fb[600][800];
 
+int currLine = 5;
+int currCol = 5;
+
 extern void     main_console();
 extern uint32_t tos_console(); 
 extern char font[96][6];
@@ -74,6 +77,36 @@ void change_toConsole ( ctx_t* ctx) {
   return;
 
 }
+
+void drawLetter(char c, int x, int y) {
+  c = c - 32;
+  uint8_t* chr = font[c];
+  for(uint8_t i=0; i<6; i++) {
+      for(uint8_t j=0; j<8; j++) {
+          if(chr[j] & (1<<i)) {
+              for(int m=0; m<3; m++) {
+                  for(int n=0; n<2; n++) {
+                      fb[3*i+y+m][2*j+x+n] = 0x0000;
+                  }
+              }
+          }
+      }
+  }
+}
+
+void drawString(char* c, int n) {
+    for(int i=0; i<n; i++) {
+        PL011_putc( UART0, c[i], true ); 
+        drawLetter(c[i], currCol, currLine);
+        currCol += 11;
+        if(currCol > (800-17)) {
+            currCol = 5;
+            currLine += 20;
+        }
+    }
+}
+
+
 
 
 void hilevel_handler_rst(  ctx_t* ctx ) {
@@ -173,17 +206,11 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
   if     ( id == GIC_SOURCE_PS20 ) {
     uint8_t x = PL050_getc( PS20 );
-    PL011_putc( UART0, '<',                      true ); 
-    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    PL011_putc( UART0, '>',                      true ); 
-    int m =0;
-    for(int k=0; k<5; k++) {
-        for( int j = 20; j < 80; j++ ) {
-          fb[ m ][ j+m ] = font[2][k];
-        }
-      m+=10;
-    }
+    drawString("hello world-", 12);
+    //for (int i=0; i<30; i++) {
+    //    drawLetter(c, i*17+40, 40);
+    //    c++;
+    //}
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
