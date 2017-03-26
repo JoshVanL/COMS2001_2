@@ -16,7 +16,7 @@ int currCol = 5;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
-extern char font[96][6];
+extern char font[128][8];
 
 extern uint32_t tos_shared();
 uint32_t* sharred_current = (uint32_t*) (tos_shared);
@@ -63,46 +63,45 @@ void scheduler( ctx_t* ctx  ) {
 
 void printZero() {
 
-  PL011_putc( UART0, '\n', true ); 
-  PL011_putc( UART0, '0', true ); 
-  PL011_putc( UART0, '0', true ); 
-  PL011_putc( UART0, '$', true ); 
-  PL011_putc( UART0, ' ', true ); 
+PL011_putc( UART0, '\n', true ); 
+PL011_putc( UART0, '0', true ); 
+PL011_putc( UART0, '0', true ); 
+PL011_putc( UART0, '$', true ); 
+PL011_putc( UART0, ' ', true ); 
 
-  return;
+return;
 }
 
 void change_toConsole ( ctx_t* ctx) {
-  printZero();
-  return;
+printZero();
+return;
 
 }
 
-void drawLetter(char c, int x, int y) {
-  c = c - 32;
-  uint8_t* chr = font[c];
-  for(uint8_t i=0; i<6; i++) {
-      for(uint8_t j=0; j<8; j++) {
-          if(chr[j] & (1<<i)) {
-              for(int m=0; m<3; m++) {
-                  for(int n=0; n<2; n++) {
-                      fb[3*i+y+m][2*j+x+n] = 0x0000;
-                  }
-              }
-          }
-      }
-  }
+void drawLetter(char c) {
+    PL011_putc( UART0, c, true ); 
+    char* chr = font[c];
+    for(uint8_t i=0; i<8; i++) {
+        for(uint8_t j=0; j<8; j++) {
+            if(chr[j] & (1<<i)) {
+                for(int m=0; m<2; m++) {
+                    for(int n=0; n<2; n++) {
+                        fb[2*j+currLine+m][2*i+currCol+n] = 0x0000;
+                    }
+                }
+            }
+        }
+    }
+    currCol += 16;
+    if(currCol > 785) {
+        currCol = 5;
+        currLine += 17;
+    }
 }
 
 void drawString(char* c, int n) {
     for(int i=0; i<n; i++) {
-        PL011_putc( UART0, c[i], true ); 
-        drawLetter(c[i], currCol, currLine);
-        currCol += 11;
-        if(currCol > (800-17)) {
-            currCol = 5;
-            currLine += 20;
-        }
+        drawLetter(c[i]);
     }
 }
 
@@ -201,16 +200,20 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
-  char* m = font[0];
 
 
   if     ( id == GIC_SOURCE_PS20 ) {
-    uint8_t x = PL050_getc( PS20 );
-    drawString("hello world-", 12);
+    char x = PL050_getc( PS20 );
+    drawLetter(x);
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
     //}
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true ); 
+    PL011_putc( UART0, x,                      true ); 
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
