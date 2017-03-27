@@ -42,6 +42,7 @@ typedef int pid_t;
 #define SYS_SET_PRI     ( 0x15 )
 
 #define SYS_CON_LCD_WRI ( 0x16 )
+#define SYS_CON_LCD_REA ( 0x17 )
 
 
 #define SIG_TERM      ( 0x00 )
@@ -110,5 +111,8 @@ extern int setPriority(int n);
 
 // Console writes to LCD screen
 extern int console_writeLCD(char* x, int n);
+
+// Console reads from LCD screen
+extern int console_readLCD(char* x);
 
 #endif

@@ -16,6 +16,7 @@ int currCol = 5;
 
 int consoleBuffer=0;
 char* inputBuffer= "";
+bool entered = false;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -249,6 +250,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     int x = PL050_getc( PS20 );
     char c = decode(x);
     if(c == '#') deleteLetter();
+    else if(c == '+') entered = true;
     else if(c != '~') drawLetter(c);
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
@@ -495,6 +497,17 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int x = (int) ctx->gpr[1];
       drawString(c, x);
       consoleBuffer = 0;
+      break;
+    }
+    case 0x17 : { //Console reads from keys in LCD
+      char* c = (char *) ctx->gpr[0];
+      char* n = "*";
+      if(entered) {
+        memcpy(c, inputBuffer, consoleBuffer*sizeof(char));
+        entered = false;
+      } else {
+        memcpy(&c, &n, sizeof(char));
+      }
       break;
     }
     default   : { // 0x?? => unknown/unsupported

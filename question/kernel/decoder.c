@@ -118,6 +118,9 @@ char decode(int x)  {
         case 0x0E : {
             return '#';
         }
+        case 0x1C : {
+            return '+';
+        }
         default : {
             return '~';
         }

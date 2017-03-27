@@ -71,7 +71,8 @@ void main_console() {
     puts( "shell$ ", 8 ); 
     console_writeLCD("shell$ ", 7);
     x[0] = '*';
-    gets( x, 1024 ); 
+    //gets( x, 1024 ); 
+    while(x[0] == '*') console_readLCD(x);
     p = strtok( x, " " );
 
     console_command();
