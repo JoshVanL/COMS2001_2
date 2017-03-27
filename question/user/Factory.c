@@ -6,6 +6,7 @@ void main_Factory(int argc, char* argv[]) {
 
   void* addr = &main_Philosopher;
   int n = atoi(argv[0]);
+  //int n =5;
   int C[20];
   char* arg[5] = {"0", argv[0], "0"};
   char* p = "";

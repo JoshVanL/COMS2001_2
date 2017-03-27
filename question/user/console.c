@@ -17,33 +17,6 @@ void gets( char* x, int n ) {
   }
 }
 
-void getc(char* m, int n) {
- int x;
- char c
- while(c != '+') {
-    x = PL050_getc( PS20 );
-    c = decode(x);
-    if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
-    else if(c == '+') entered = true;
-    else if(c == '^') nextUpper = true;
-    else if(c == '/') nextUpper = false;
-    else if(c != '~') {
-        if (nextUpper) {
-            c -= 32;
-        }
-        drawLetter(c, 0);
-        inputBuffer[consoleBuffer] = c;
-        consoleBuffer++;
-    }
-  for( int i = 0; i < n; i++ ) {
-    x[ i ] = PL050_getc( PS20 );
-    
-    if( x[ i ] == '\x1C' ) {
-      x[ i ] = '\x00'; break;
-    }
-  }
- }
-}
 
 
 
@@ -102,14 +75,10 @@ void main_console() {
     for(int n=0; n<50; n++) x[n]='\x00';
     puts( "shell$ ", 8 ); 
     console_writeLCD("shell$ ", 7);
-    getc( x, 1024 ); 
-    i = 0;
-    while(x[i] != '\x00'){
-        x[i] = decode(x[i]);
-        i +=2;
-    }
+    //getc( x, 1024 ); 
+    x[0] = '*';
     
-    //while(x[0] == '*') console_readLCD(x);
+    while(x[0] == '*') console_readLCD(x);
 
     puts("\n", 1); 
     puts(x, 16); 

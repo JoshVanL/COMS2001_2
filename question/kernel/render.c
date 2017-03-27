@@ -42,10 +42,10 @@ void renderInit() {
   LCD->LCDControl   |= 0x00000800; // power-on LCD controller
   LCD->LCDControl   |= 0x00000001; // enable   LCD controller
 
-  //PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
-  //PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
-  //PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
-  //PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+  PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+  PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
 
   uint8_t ack;
 

@@ -103,6 +103,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
   TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
   
+  
   GICC0->PMR          = 0x000000F0; // unmask all            interrupts
   GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
   GICD0->ISENABLER1 |= 0x00300000; // enable PS2          interrupts
@@ -146,6 +147,23 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
 
   if     ( id == GIC_SOURCE_PS20 ) {
+      int x = PL050_getc( PS20 );
+      char c = decode(x);
+      if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
+      else if(c == '+') entered = true;
+      else if(c == '^') nextUpper = true;
+      else if(c == '/') nextUpper = false;
+      else if(c != '~') {
+          if (nextUpper) {
+              c -= 32;
+          }
+          drawLetter(c, 0);
+          inputBuffer[consoleBuffer] = c;
+          consoleBuffer++;
+    }
+
+
+
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
@@ -308,7 +326,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
    
      if (fd == 1) { //write to console
-      //drawString(x, n, 1);
+       drawString(x, n, 1);
        for( int i = 0; i < n; i++  ) {
   	     PL011_putc( UART0, *x++, true  );
        }
@@ -321,7 +339,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x03 : { //Fork()
       PL011_putc( UART0, 'F', true );
-      //drawLetter('F', 1);
+      drawLetter('F', 1);
       tos_userProgram += 0x00010000; 
       break;
     }
@@ -334,7 +352,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }     
     case 0x05 : { //EXEC()
       if (&ctx->gpr[0] != NULL) {
-        //PL011_putc( UART0, 'E', true );
+        drawLetter('E', 1);
+        PL011_putc( UART0, 'E', true );
         do_Exec(ctx);
       }
       break;
