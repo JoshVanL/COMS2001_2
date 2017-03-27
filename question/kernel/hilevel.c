@@ -9,15 +9,11 @@ uint32_t pidNum = 0;
 uint32_t timer =0;
 uint32_t active_pids[50];
 
-uint16_t fb[600][800];
-
-int currLine = 5;
-int currCol = 5;
+bool entered = false;
+bool nextUpper = false;
 
 int consoleBuffer=0;
 char* inputBuffer= "";
-bool entered = false;
-bool nextUpper = false;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -25,7 +21,6 @@ extern uint32_t tos_console();
 extern uint32_t tos_shared();
 uint32_t* sharred_current = (uint32_t*) (tos_shared);
 
-extern char font[128][8];
 
 void scheduler( ctx_t* ctx  ) {
   bool changed=false;
@@ -69,13 +64,13 @@ void scheduler( ctx_t* ctx  ) {
 
 void printZero() {
 
-PL011_putc( UART0, '\n', true ); 
-PL011_putc( UART0, '0', true ); 
-PL011_putc( UART0, '0', true ); 
-PL011_putc( UART0, '$', true ); 
-PL011_putc( UART0, ' ', true ); 
+  PL011_putc( UART0, '\n', true ); 
+  PL011_putc( UART0, '0', true ); 
+  PL011_putc( UART0, '0', true ); 
+  PL011_putc( UART0, '$', true ); 
+  PL011_putc( UART0, ' ', true ); 
 
-return;
+  return;
 }
 
 void change_toConsole ( ctx_t* ctx) {
@@ -83,120 +78,9 @@ void change_toConsole ( ctx_t* ctx) {
   return;
 }
 
-void carriageReturn() {
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x9CEA;
-        }
-    }
-    currCol = 5;
-    currLine += 17;
-    for( int i=0; i<16; i++) {
-        for(int j =0; j<12; j++) {
-            fb[currLine+i][currCol+j] = 0x0000;
-          }
-      }
- return;
-}
-
-
-void drawLetter(char c) {
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x9CEA;
-        }
-    }
-    char* chr = font[c];
-    for(uint8_t i=0; i<8; i++) {
-        for(uint8_t j=0; j<8; j++) {
-            if(chr[j] & (1<<i)) {
-                for(int m=0; m<2; m++) {
-                    for(int n=0; n<2; n++) {
-                        fb[2*j+currLine+m][2*i+currCol+n] = 0x0000;
-                    }
-                }
-            }
-        }
-    }
-    currCol += 16;
-    if(currCol > 785) {
-        currCol = 5;
-        currLine += 17;
-    }
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x0000;
-        }
-    }
-  inputBuffer[consoleBuffer] = c;
-  consoleBuffer++;
-}
-
-void deleteLetter() {
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<16; j++) {
-          fb[currLine+i][currCol+j] = 0x9CEA;
-        }
-    }
-    if(currCol <= 16 && currLine > 17 && consoleBuffer > 0) {
-        consoleBuffer--;
-        currCol = 785;
-        currLine -= 17;
-    } else if( currCol > 5 && consoleBuffer > 0) {
-        consoleBuffer--;
-        currCol -= 16;
-    }
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x0000;
-        }
-    }
-}
-
-void drawString(char* c, int n) {
-    for(int i=0; i<n; i++) {
-        if(c[i] =='\n') carriageReturn();
-        else drawLetter(c[i]);
-    }
-}
-
-
 
 
 void hilevel_handler_rst(  ctx_t* ctx ) {
-
-  SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
-  LCD->LCDTiming0    = 0x1313A4C4; // per per Table 4.3 of datasheet
-  LCD->LCDTiming1    = 0x0505F657; // per per Table 4.3 of datasheet
-  LCD->LCDTiming2    = 0x071F1800; // per per Table 4.3 of datasheet
-
-  LCD->LCDUPBASE     = ( uint32_t )( &fb );
-
-  LCD->LCDControl    = 0x00000020; // select TFT   display type
-  LCD->LCDControl   |= 0x00000008; // select 16BPP display mode
-  LCD->LCDControl   |= 0x00000800; // power-on LCD controller
-  LCD->LCDControl   |= 0x00000001; // enable   LCD controller
-
-  /* Configure the mechanism for interrupt handling by
-   *
-   * - configuring then enabling PS/2 controllers st. an interrupt is
-   *   raised every time a byte is subsequently received,
-   * - configuring GIC st. the selected interrupts are forwarded to the 
-   *   processor via the IRQ interrupt signal, then
-   * - enabling IRQ interrupts.
-   */
-
-  PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
-  PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
-  PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
-  PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
-
-  uint8_t ack;
-
-        PL050_putc( PS20, 0xF4 );  // transmit PS/2 enable command
-  ack = PL050_getc( PS20       );  // receive  PS/2 acknowledgement
-        PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
-  ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
 
   /* Configure the mechanism for interrupt handling by
   *
@@ -218,6 +102,8 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   GICD0->ISENABLER1 |= 0x00300000; // enable PS2          interrupts
   GICC0->CTLR         = 0x00000001; // enable GIC interface
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
+
+  renderInit();
   
   memset( &pcb[ 0  ], 0, sizeof( pcb_t  )  );
   pcb[ 0  ].pid      = 0;
@@ -241,17 +127,6 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   // Write example red/green/blue test pattern into the frame buffer.
 
-  for( int i = 0; i < 600; i++ ) {
-    for( int j = 0; j < 800; j++ ) {
-      fb[ i ][ j ] = 0x9CEA;
-    }
-  }
-
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x0000;
-        }
-    }
   icurrent =0;
 
   return;
@@ -266,24 +141,26 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   if     ( id == GIC_SOURCE_PS20 ) {
     int x = PL050_getc( PS20 );
     char c = decode(x);
-    if(c == '#') deleteLetter();
+    if(c == '#') deleteLetter(consoleBuffer);
     else if(c == '+') entered = true;
     else if(c == '^') nextUpper = true;
+    else if(c == '/') nextUpper = false;
     else if(c != '~') {
         if (nextUpper) {
             c -= 32;
-            nextUpper = false;
         }
         drawLetter(c);
+        inputBuffer[consoleBuffer] = c;
+        consoleBuffer++;
     }
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
     //}
-    PL011_putc( UART0, '<',                      true ); 
-    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    PL011_putc( UART0, '>',                      true ); 
+    //PL011_putc( UART0, '<',                      true ); 
+    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    //PL011_putc( UART0, '>',                      true ); 
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
@@ -527,9 +404,14 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char* c = (char *) ctx->gpr[0];
       char* n = "*";
       if(entered) {
+        if(consoleBuffer == 0) {
+            inputBuffer[0] = '\n';
+            consoleBuffer = 1;
+        }
         carriageReturn();
         memcpy(c, inputBuffer, consoleBuffer*sizeof(char));
         entered = false;
+        consoleBuffer=0;
       } else {
         memcpy(&c, &n, sizeof(char));
       }

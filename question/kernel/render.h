@@ -1,7 +1,8 @@
-#ifndef __HILEVEL_H
-#define __HILEVEL_H
+#ifndef __RENDER_H
+#define __RENDER_H
 
-// Include functionality relating to newlib (the standard C library).
+#include "hilevel.h"
+
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -29,18 +30,15 @@
 #include "PL111.h"
 #include "SYS.h"
 
-typedef int pid_t;
 
-typedef struct {
-      uint32_t cpsr, pc, gpr[ 13  ], sp, lr;
+void carriageReturn();
 
-} ctx_t;
+void renderInit();
 
-typedef struct {
-      pid_t pid;
-        ctx_t ctx;
+void drawLetter(char c);
 
-} pcb_t;
+void deleteLetter(int consoleBuffer);
 
+void drawString(char* c, int n);
 
 #endif

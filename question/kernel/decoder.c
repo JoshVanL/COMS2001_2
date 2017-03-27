@@ -124,6 +124,9 @@ char decode(int x)  {
         case 0x2A : {
             return '^';
         }
+        case 0xAA : {
+            return '/';
+        }
         default : {
             return '~';
         }

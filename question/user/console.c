@@ -70,9 +70,12 @@ void main_console() {
   while( 1 ) {
     puts( "shell$ ", 8 ); 
     console_writeLCD("shell$ ", 7);
+    for(int i=0; i<50; i++) x[i] = ' ';
     x[0] = '*';
     //gets( x, 1024 ); 
     while(x[0] == '*') console_readLCD(x);
+    puts( "\n", 1 ); 
+    puts( x, 10 ); 
     p = strtok( x, " " );
 
     console_command();
@@ -110,26 +113,35 @@ void main_console() {
     else if( 0 == strcmp( p, "ps" ) ) {
         char* c;
         int ps = processes_count();
+        int k =1;
 
         puts ( "pids [", 6);
+        console_writeLCD ( "pids [", 6);
         itoa(c, ps);
         puts (c, 2);
+        if(ps > 10) k =2;
+        console_writeLCD (c, k);
         puts ( "] : ", 4);
+        console_writeLCD ( "] : ", 4);
         PL011_putc( UART1, '0', true ); 
+        console_writeLCD ( "0", 1);
 
         for(int i =1; i<ps; i++) {
           int p = processes_pid(i);
           puts(" ", 1);
+          console_writeLCD(" ", 1);
           itoa(c, p);
           puts(c, 2);
+          console_writeLCD(c, 2);
         }
         puts("\n", 1);
+        console_writeLCD("\n", 1);
     } 
     else if( 0 == strcmp( p, NULL ) ) {
     }
     else {
       puts( "unknown command\n", 16 );
-      console_writeLCD("unknown command\n", 16);
+      if (x[0] != '\n') console_writeLCD("unknown command\n", 16);
     }
   }
 
