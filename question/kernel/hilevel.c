@@ -146,20 +146,6 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
 
   if     ( id == GIC_SOURCE_PS20 ) {
-    int x = PL050_getc( PS20 );
-    char c = decode(x);
-    if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
-    else if(c == '+') entered = true;
-    else if(c == '^') nextUpper = true;
-    else if(c == '/') nextUpper = false;
-    else if(c != '~') {
-        if (nextUpper) {
-            c -= 32;
-        }
-        drawLetter(c, 0);
-        inputBuffer[consoleBuffer] = c;
-        consoleBuffer++;
-    }
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
@@ -214,6 +200,27 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.gpr[0]   = ( uint32_t  )( argc );    
   pcb[ count  ].ctx.gpr[1]   = ( uint32_t  )( argv );    
   count++;
+
+  memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+  memcpy( ctx, &pcb[ count-1 ].ctx, sizeof( ctx_t  )  );
+  current = &pcb[ count-1 ];
+  icurrent = count-1;
+
+  char* x;
+  uint32_t num = pcb[ icurrent].pid %10;
+  x[0] = '0' +  num;
+  num = (pcb[ icurrent].pid - num)/10;
+  x[1] = '0' + num;
+
+  PL011_putc( UART0, '\n', true ); 
+  PL011_putc( UART0, x[1], true ); 
+  PL011_putc( UART0, x[0], true ); 
+  PL011_putc( UART0, ':', true ); 
+  PL011_putc( UART0, ' ', true ); 
+  carriageReturn(1);
+  drawLetter(x[1], 1);
+  drawLetter(x[0], 1);
+  drawString(": ", 2, 1);
 
   priority[count] = 2;
   return;
@@ -301,8 +308,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
    
      if (fd == 1) { //write to console
+      //drawString(x, n, 1);
        for( int i = 0; i < n; i++  ) {
-         drawLetter(*x, 1);
   	     PL011_putc( UART0, *x++, true  );
        }
        ctx->gpr[ 0  ] = n;
@@ -314,7 +321,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x03 : { //Fork()
       PL011_putc( UART0, 'F', true );
-      drawLetter('F', 1);
+      //drawLetter('F', 1);
       tos_userProgram += 0x00010000; 
       break;
     }
@@ -327,8 +334,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }     
     case 0x05 : { //EXEC()
       if (&ctx->gpr[0] != NULL) {
-        PL011_putc( UART0, 'E', true );
-        drawLetter('E', 1);
+        //PL011_putc( UART0, 'E', true );
         do_Exec(ctx);
       }
       break;
@@ -353,7 +359,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
       uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
 
-      uint32_t* curr = (uint32_t*) (share_loc[pnt]);
+      //uint32_t* curr = (uint32_t*) (share_loc[pnt]);
+      uint32_t* curr = (uint32_t*) (sharred_current);
     
       if (fd == 0) {
          memcpy(&curr[0], x,  n*sizeof(int));
@@ -418,8 +425,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x17 : { //Console reads from keys in LCD
-      char* c = (char *) ctx->gpr[0];
-      char* n = "*";
+      char* c = (char *) ctx->gpr[0]; char* n = "*";
       if(entered) {
         if(consoleBuffer == 0) {
             inputBuffer[0] = '\n';

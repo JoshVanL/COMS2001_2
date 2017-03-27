@@ -6,6 +6,7 @@
  * limit reached).
  */
 void puts( char* x, int n ) { for( int i = 0; i < n; i++ ) { PL011_putc( UART1, x[ i ], true ); } } 
+
 void gets( char* x, int n ) {
   for( int i = 0; i < n; i++ ) {
     x[ i ] = PL011_getc( UART1, true );
@@ -15,6 +16,35 @@ void gets( char* x, int n ) {
     }
   }
 }
+
+void getc(char* m, int n) {
+ int x;
+ char c
+ while(c != '+') {
+    x = PL050_getc( PS20 );
+    c = decode(x);
+    if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
+    else if(c == '+') entered = true;
+    else if(c == '^') nextUpper = true;
+    else if(c == '/') nextUpper = false;
+    else if(c != '~') {
+        if (nextUpper) {
+            c -= 32;
+        }
+        drawLetter(c, 0);
+        inputBuffer[consoleBuffer] = c;
+        consoleBuffer++;
+    }
+  for( int i = 0; i < n; i++ ) {
+    x[ i ] = PL050_getc( PS20 );
+    
+    if( x[ i ] == '\x1C' ) {
+      x[ i ] = '\x00'; break;
+    }
+  }
+ }
+}
+
 
 
 /* Since we lack a *real* loader (as a result of lacking a storage 
@@ -64,18 +94,26 @@ void* load( char* x ) {
 
 void main_console() {
   char* p, x[ 1024 ];
+  char in;
   char *arg[5];
   int i;
 
   while( 1 ) {
+    for(int n=0; n<50; n++) x[n]='\x00';
     puts( "shell$ ", 8 ); 
     console_writeLCD("shell$ ", 7);
-    for(int i=0; i<50; i++) x[i] = ' ';
-    x[0] = '*';
-    //gets( x, 1024 ); 
-    while(x[0] == '*') console_readLCD(x);
-    puts( "\n", 1 ); 
-    puts( x, 20 ); 
+    getc( x, 1024 ); 
+    i = 0;
+    while(x[i] != '\x00'){
+        x[i] = decode(x[i]);
+        i +=2;
+    }
+    
+    //while(x[0] == '*') console_readLCD(x);
+
+    puts("\n", 1); 
+    puts(x, 16); 
+    puts("\n", 1); 
     p = strtok( x, " " );
 
     console_command();
@@ -85,12 +123,11 @@ void main_console() {
 
       i =0;
       arg[i] = strtok( NULL, " "); 
-      puts( arg[i], 5 ); 
       while( arg[i] != NULL) {
           i++;
           arg[i] = strtok( NULL, " ");
-          puts( arg[i], 5 ); 
       }
+      puts(arg[0], 1 ); 
 
       if( addr != NULL) {
           pid_t pid = fork();

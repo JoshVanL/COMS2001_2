@@ -10,6 +10,7 @@ void main_Factory(int argc, char* argv[]) {
   char* arg[5] = {"0", argv[0], "0"};
   char* p = "";
   int pnt = share_init();
+  write(STDOUT_FILENO, argv[0], 2);
 
   if(n>0 && n < 20) {
   
@@ -49,23 +50,24 @@ void main_Factory(int argc, char* argv[]) {
     while(semaphore());
     share(SHARE_WRITE, pnt, C, 20);
     setPriority(10);
+
+    int sleep = 0;
+
+    while(true) {
+      sleep = curr_timer() + 10;
+      while(curr_timer() < sleep);
+
+      while(semaphore());
+      share(SHARE_READ, 1, C, 20);
+
+      for(int i=0; i<6; i++) {
+        p[i] = C[i] + '0';
+      }
+      write(STDOUT_FILENO, p, n);
+    }
   
   }
 
-  int sleep = 0;
-
-  while(true) {
-    sleep = curr_timer() + 1;
-    while(curr_timer() < sleep);
-
-    while(semaphore());
-    share(SHARE_READ, 1, C, 20);
-
-    for(int i=0; i<6; i++) {
-      p[i] = C[i] + '0';
-    }
-    write(STDOUT_FILENO, p, n);
-  }
 
   exit( EXIT_SUCCESS );
 }

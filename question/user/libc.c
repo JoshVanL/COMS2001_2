@@ -256,9 +256,9 @@ int console_writeLCD(char* x, int n) {
 
 int console_readLCD(char* x) {
   int r;
-  asm volatile( "mov r0, %2 \n"  //assign r0 = x
+  asm volatile( "mov r0, %2 \n"  //assign r5 = x
                 "svc %1     \n" // make system call sys_
-                "mov %0, r0 \n" // assign r  = r0
+                "mov %0, r0 \n" // assign r  = r5
               : "=r" (r) 
               : "i" (SYS_CON_LCD_REA), "r" (x)
               : "r0", "r1" );
