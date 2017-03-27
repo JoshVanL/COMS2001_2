@@ -16,7 +16,8 @@
 
 #include "lolevel.h"
 #include     "int.h"
-#include "font.h"
+#include    "font.h"
+#include    "decoder.h"
 
 //Include functionality relating to the platform.
 

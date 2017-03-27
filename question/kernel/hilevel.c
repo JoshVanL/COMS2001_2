@@ -16,10 +16,11 @@ int currCol = 5;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
-extern char font[128][8];
 
 extern uint32_t tos_shared();
 uint32_t* sharred_current = (uint32_t*) (tos_shared);
+
+extern char font[128][8];
 
 void scheduler( ctx_t* ctx  ) {
   bool changed=false;
@@ -79,6 +80,11 @@ return;
 }
 
 void drawLetter(char c) {
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<12; j++) {
+          fb[currLine+i][currCol+j] = 0x9CEA;
+        }
+    }
     PL011_putc( UART0, c, true ); 
     char* chr = font[c];
     for(uint8_t i=0; i<8; i++) {
@@ -96,6 +102,30 @@ void drawLetter(char c) {
     if(currCol > 785) {
         currCol = 5;
         currLine += 17;
+    }
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<12; j++) {
+          fb[currLine+i][currCol+j] = 0x0000;
+        }
+    }
+}
+
+void deleteLetter() {
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<16; j++) {
+          fb[currLine+i][currCol+j] = 0x9CEA;
+        }
+    }
+    if(currCol <= 16 && currLine > 17) {
+        currCol = 785;
+        currLine -= 17;
+    } else if( currCol > 5) {
+        currCol -= 16;
+    }
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<12; j++) {
+          fb[currLine+i][currCol+j] = 0x0000;
+        }
     }
 }
 
@@ -191,6 +221,12 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
       fb[ i ][ j ] = 0x9CEA;
     }
   }
+
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<12; j++) {
+          fb[currLine+i][currCol+j] = 0x0000;
+        }
+    }
   icurrent =0;
 
   return;
@@ -203,8 +239,10 @@ void hilevel_handler_irq( ctx_t* ctx ) {
 
 
   if     ( id == GIC_SOURCE_PS20 ) {
-    char x = PL050_getc( PS20 );
-    drawLetter(x);
+    int x = PL050_getc( PS20 );
+    char c = decode(x);
+    if(c == '#') deleteLetter();
+    else if(c != '~') drawLetter(c);
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
@@ -213,7 +251,6 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
     PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
     PL011_putc( UART0, '>',                      true ); 
-    PL011_putc( UART0, x,                      true ); 
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
