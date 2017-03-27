@@ -68,7 +68,11 @@ void main_console() {
   int i;
 
   while( 1 ) {
-    puts( "shell$ ", 8 ); gets( x, 1024 ); p = strtok( x, " " );
+    puts( "shell$ ", 8 ); 
+    console_writeLCD("shell$ ", 7);
+    x[0] = '*';
+    gets( x, 1024 ); 
+    p = strtok( x, " " );
 
     console_command();
 

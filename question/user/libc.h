@@ -23,23 +23,26 @@ typedef int pid_t;
  * to act as a limited model of similar concepts.
  */
 
-#define SYS_YIELD      ( 0x00 )
-#define SYS_WRITE      ( 0x01 )
-#define SYS_READ       ( 0x02 )
-#define SYS_FORK       ( 0x03 )
-#define SYS_EXIT       ( 0x04 )
-#define SYS_EXEC       ( 0x05 )
-#define SYS_KILL       ( 0x06 )
-#define SYS_SHARE_INIT ( 0x07 )
-#define SYS_SHARE      ( 0x08 )
-#define SYS_SEM_DOWN   ( 0x09 )
+#define SYS_YIELD       ( 0x00 )
+#define SYS_WRITE       ( 0x01 )
+#define SYS_READ        ( 0x02 )
+#define SYS_FORK        ( 0x03 )
+#define SYS_EXIT        ( 0x04 )
+#define SYS_EXEC        ( 0x05 )
+#define SYS_KILL        ( 0x06 )
+#define SYS_SHARE_INIT  ( 0x07 )
+#define SYS_SHARE       ( 0x08 )
+#define SYS_SEM_DOWN    ( 0x09 )
 
-#define SYS_TIME       ( 0x10 )
-#define SYS_CONS_COM   ( 0x11 )
-#define SYS_KILL_ALL   ( 0x12 )
-#define SYS_PS_COUNT   ( 0x13 )
-#define SYS_PS_PID     ( 0x14 )
-#define SYS_SET_PRI    ( 0x15 )
+#define SYS_TIME        ( 0x10 )
+#define SYS_CONS_COM    ( 0x11 )
+#define SYS_KILL_ALL    ( 0x12 )
+#define SYS_PS_COUNT    ( 0x13 )
+#define SYS_PS_PID      ( 0x14 )
+#define SYS_SET_PRI     ( 0x15 )
+
+#define SYS_CON_LCD_WRI ( 0x16 )
+
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -104,5 +107,8 @@ extern int processes_pid(int n);
 
 // Set current process priority 
 extern int setPriority(int n);
+
+// Console writes to LCD screen
+extern int console_writeLCD(char* x, int n);
 
 #endif

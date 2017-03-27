@@ -14,6 +14,9 @@ uint16_t fb[600][800];
 int currLine = 5;
 int currCol = 5;
 
+int consoleBuffer=0;
+char* inputBuffer= "";
+
 extern void     main_console();
 extern uint32_t tos_console(); 
 
@@ -108,6 +111,8 @@ void drawLetter(char c) {
           fb[currLine+i][currCol+j] = 0x0000;
         }
     }
+  inputBuffer[consoleBuffer] = c;
+  consoleBuffer++;
 }
 
 void deleteLetter() {
@@ -116,10 +121,12 @@ void deleteLetter() {
           fb[currLine+i][currCol+j] = 0x9CEA;
         }
     }
-    if(currCol <= 16 && currLine > 17) {
+    if(currCol <= 16 && currLine > 17 && consoleBuffer > 0) {
+        consoleBuffer--;
         currCol = 785;
         currLine -= 17;
-    } else if( currCol > 5) {
+    } else if( currCol > 5 && consoleBuffer > 0) {
+        consoleBuffer--;
         currCol -= 16;
     }
   for( int i=0; i<16; i++) {
@@ -481,6 +488,13 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
       int n = ctx->gpr[0];
       priority[icurrent] = n;
+      break;
+    }
+    case 0x16 : { //Console writes to LCD
+      char* c = (char *) ctx->gpr[0];
+      int x = (int) ctx->gpr[1];
+      drawString(c, x);
+      consoleBuffer = 0;
       break;
     }
     default   : { // 0x?? => unknown/unsupported

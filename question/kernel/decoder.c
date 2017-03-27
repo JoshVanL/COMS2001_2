@@ -31,6 +31,9 @@ char decode(int x)  {
         case 0x0A : {
             return '9';
         }
+        case 0x0B : {
+            return '0';
+        }
         case 0x10 : {
             return 'q';
         }

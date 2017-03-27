@@ -240,3 +240,16 @@ int setPriority(int n) {
 
   return r;
 }
+
+int console_writeLCD(char* x, int n) {
+  int r;
+  asm volatile( "mov r0, %2 \n"  //assign r0 = x
+                "mov r1, %3 \n" // assign r1 = n
+                "svc %1     \n" // make system call sys_
+                "mov %0, r0 \n" // assign r  = r0
+              : "=r" (r) 
+              : "i" (SYS_CON_LCD_WRI), "r" (x), "r" (n)
+              : "r0", "r1", "r2" );
+
+  return r;
+}
