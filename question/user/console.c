@@ -94,6 +94,7 @@ void main_console() {
           for(int n=0; n<5; n++)arg[n] = NULL;
         //}     
       } else {   
+        console_writeLCD("unknown program\n", 16);
         puts("unknown program\n", 16); 
       }
     } 
@@ -128,6 +129,7 @@ void main_console() {
     }
     else {
       puts( "unknown command\n", 16 );
+      console_writeLCD("unknown command\n", 16);
     }
   }
 

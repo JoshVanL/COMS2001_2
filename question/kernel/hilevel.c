@@ -17,6 +17,7 @@ int currCol = 5;
 int consoleBuffer=0;
 char* inputBuffer= "";
 bool entered = false;
+bool nextUpper = false;
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -78,10 +79,26 @@ return;
 }
 
 void change_toConsole ( ctx_t* ctx) {
-printZero();
-return;
-
+  printZero();
+  return;
 }
+
+void carriageReturn() {
+  for( int i=0; i<16; i++) {
+      for(int j =0; j<12; j++) {
+          fb[currLine+i][currCol+j] = 0x9CEA;
+        }
+    }
+    currCol = 5;
+    currLine += 17;
+    for( int i=0; i<16; i++) {
+        for(int j =0; j<12; j++) {
+            fb[currLine+i][currCol+j] = 0x0000;
+          }
+      }
+ return;
+}
+
 
 void drawLetter(char c) {
   for( int i=0; i<16; i++) {
@@ -89,7 +106,6 @@ void drawLetter(char c) {
           fb[currLine+i][currCol+j] = 0x9CEA;
         }
     }
-    PL011_putc( UART0, c, true ); 
     char* chr = font[c];
     for(uint8_t i=0; i<8; i++) {
         for(uint8_t j=0; j<8; j++) {
@@ -139,7 +155,8 @@ void deleteLetter() {
 
 void drawString(char* c, int n) {
     for(int i=0; i<n; i++) {
-        drawLetter(c[i]);
+        if(c[i] =='\n') carriageReturn();
+        else drawLetter(c[i]);
     }
 }
 
@@ -251,7 +268,14 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     char c = decode(x);
     if(c == '#') deleteLetter();
     else if(c == '+') entered = true;
-    else if(c != '~') drawLetter(c);
+    else if(c == '^') nextUpper = true;
+    else if(c != '~') {
+        if (nextUpper) {
+            c -= 32;
+            nextUpper = false;
+        }
+        drawLetter(c);
+    }
     //for (int i=0; i<30; i++) {
     //    drawLetter(c, i*17+40, 40);
     //    c++;
@@ -503,6 +527,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char* c = (char *) ctx->gpr[0];
       char* n = "*";
       if(entered) {
+        carriageReturn();
         memcpy(c, inputBuffer, consoleBuffer*sizeof(char));
         entered = false;
       } else {
