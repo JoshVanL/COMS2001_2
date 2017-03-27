@@ -75,7 +75,7 @@ void main_console() {
     //gets( x, 1024 ); 
     while(x[0] == '*') console_readLCD(x);
     puts( "\n", 1 ); 
-    puts( x, 10 ); 
+    puts( x, 20 ); 
     p = strtok( x, " " );
 
     console_command();
@@ -85,9 +85,11 @@ void main_console() {
 
       i =0;
       arg[i] = strtok( NULL, " "); 
+      puts( arg[i], 5 ); 
       while( arg[i] != NULL) {
           i++;
           arg[i] = strtok( NULL, " ");
+          puts( arg[i], 5 ); 
       }
 
       if( addr != NULL) {

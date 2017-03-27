@@ -3,8 +3,31 @@
 uint16_t fb[600][800];
 int currLine = 5;
 int currCol = 5;
+int currLineKE = 5;
+int currColKE = 410;
 extern char font[128][8];
 
+
+void upBuffer(int type) {
+    if(type ==0) {
+        for(int i=0; i<460; i++) {
+            for(int j=0; j<400; j++) {
+                fb[ i ][ j ] = 0x9CEA;
+            }
+        }
+        currLine=5;
+        currCol=5;
+    } else {
+      for(int i=0; i<460; i++) {
+          for(int j=410; j<800; j++) {
+              fb[ i ][ j ] = 0x9CEA;
+          }
+      }
+      currLineKE=5;
+      currColKE=410;
+    }
+
+}
 
 void renderInit() {
   SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
@@ -58,60 +81,92 @@ void renderInit() {
 }
 
 
-void carriageReturn() {
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x9CEA;
-        }
-    }
-    currCol = 5;
-    currLine += 17;
-    for( int i=0; i<16; i++) {
+void carriageReturn(int type) {
+  if(type ==0) {
+     for( int i=0; i<16; i++) {
         for(int j =0; j<12; j++) {
-            fb[currLine+i][currCol+j] = 0x0000;
+            fb[currLine+i][currCol+j] = 0x9CEA;
           }
       }
+      currCol = 5;
+      currLine += 17;
+      for( int i=0; i<16; i++) {
+          for(int j =0; j<12; j++) {
+              fb[currLine+i][currCol+j] = 0x0000;
+            }
+      }
+    } else {
+      currColKE = 410;
+      currLineKE += 17;
+    }
+
  return;
 }
 
-void drawLetter(char c) {
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x9CEA;
-        }
+void drawLetter(char c, int type) {
+  if (type == 0) {
+     if(currLine > 430) upBuffer(type);
+     for( int i=0; i<16; i++) {
+         for(int j =0; j<12; j++) {
+             fb[currLine+i][currCol+j] = 0x9CEA;
+           }
+       }
+       char* chr = font[c];
+       for(uint8_t i=0; i<8; i++) {
+           for(uint8_t j=0; j<8; j++) {
+               if(chr[j] & (1<<i)) {
+                   for(int m=0; m<2; m++) {
+                       for(int n=0; n<2; n++) {
+                           fb[2*j+currLine+m][2*i+currCol+n] = 0x0000;
+                       }
+                   }
+               }
+           }
+       }
+       currCol += 16;
+       if(currCol > 385) {
+           currCol = 5;
+           currLine+=17;
+       }
+     for( int i=0; i<16; i++) {
+         for(int j =0; j<12; j++) {
+             fb[currLine+i][currCol+j] = 0x0000;
+           }
+       }
+    } else {
+     if(currLineKE > 430) upBuffer(type);
+     for( int i=0; i<16; i++) {
+         for(int j =0; j<12; j++) {
+             fb[currLineKE+i][currColKE+j] = 0x9CEA;
+           }
+       }
+       char* chr = font[c];
+       for(uint8_t i=0; i<8; i++) {
+           for(uint8_t j=0; j<8; j++) {
+               if(chr[j] & (1<<i)) {
+                   for(int m=0; m<2; m++) {
+                       for(int n=0; n<2; n++) {
+                           fb[2*j+currLineKE+m][2*i+currColKE+n] = 0x0000;
+                       }
+                   }
+               }
+           }
+       }
+       currColKE += 16;
+       if(currColKE > 785) {
+           currColKE = 410;
+       }
     }
-    char* chr = font[c];
-    for(uint8_t i=0; i<8; i++) {
-        for(uint8_t j=0; j<8; j++) {
-            if(chr[j] & (1<<i)) {
-                for(int m=0; m<2; m++) {
-                    for(int n=0; n<2; n++) {
-                        fb[2*j+currLine+m][2*i+currCol+n] = 0x0000;
-                    }
-                }
-            }
-        }
-    }
-    currCol += 16;
-    if(currCol > 385) {
-        currCol = 5;
-        currLine += 17;
-    }
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x0000;
-        }
-    }
+
 }
 
-void deleteLetter(int consoleBuffer) {
+int deleteLetter(int consoleBuffer, int type) {
   for( int i=0; i<16; i++) {
       for(int j =0; j<16; j++) {
           fb[currLine+i][currCol+j] = 0x9CEA;
         }
     }
     if(currCol <= 16 && currLine > 17 && consoleBuffer > 0) {
-        consoleBuffer--;
         currCol = 385;
         currLine -= 17;
     } else if( currCol > 5 && consoleBuffer > 0) {
@@ -123,14 +178,17 @@ void deleteLetter(int consoleBuffer) {
           fb[currLine+i][currCol+j] = 0x0000;
         }
     }
+  return consoleBuffer;
 }
 
-void drawString(char* c, int n) {
+void drawString(char* c, int n, int type) {
     for(int i=0; i<n; i++) {
-        if(c[i] =='\n') carriageReturn();
-        else drawLetter(c[i]);
+        if(c[i] =='\n') carriageReturn(type);
+        else drawLetter(c[i], type);
     }
 }
+
+
 
 
 

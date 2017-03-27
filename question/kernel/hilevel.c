@@ -56,6 +56,10 @@ void scheduler( ctx_t* ctx  ) {
     PL011_putc( UART0, x[0], true ); 
     PL011_putc( UART0, ':', true ); 
     PL011_putc( UART0, ' ', true ); 
+    carriageReturn(1);
+    drawLetter(x[1], 1);
+    drawLetter(x[0], 1);
+    drawString(": ", 2, 1);
   }
 	
   return;
@@ -69,6 +73,8 @@ void printZero() {
   PL011_putc( UART0, '0', true ); 
   PL011_putc( UART0, '$', true ); 
   PL011_putc( UART0, ' ', true ); 
+  carriageReturn(1);
+  drawString("00$ ", 4, 1);
 
   return;
 }
@@ -123,6 +129,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 
   PL011_putc( UART0, '\n', true ); 
   for(uint32_t i=0; i<20; i++) PL011_putc( UART0, '~', true ); 
+  for(uint32_t i=0; i<26; i++) drawLetter('~', 1);
 
 
   // Write example red/green/blue test pattern into the frame buffer.
@@ -141,7 +148,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   if     ( id == GIC_SOURCE_PS20 ) {
     int x = PL050_getc( PS20 );
     char c = decode(x);
-    if(c == '#') deleteLetter(consoleBuffer);
+    if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
     else if(c == '+') entered = true;
     else if(c == '^') nextUpper = true;
     else if(c == '/') nextUpper = false;
@@ -149,7 +156,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
         if (nextUpper) {
             c -= 32;
         }
-        drawLetter(c);
+        drawLetter(c, 0);
         inputBuffer[consoleBuffer] = c;
         consoleBuffer++;
     }
@@ -226,6 +233,7 @@ void do_Exit (ctx_t* ctx ) {
   memcpy( ctx, &pcb[ icurrent  ].ctx, sizeof( ctx_t  )  );
   current = &pcb [ icurrent ];
   PL011_putc( UART0, 'H', true );
+  drawLetter('H', 1);
 
   return;
 }
@@ -251,8 +259,10 @@ void do_Kill( ctx_t* ctx ) {
     count--;
     icurrent = 0;
     PL011_putc( UART0, 'H', true );
+    drawLetter('H', 1);
   } else {
     PL011_putc( UART0, 'E', true );
+    drawLetter('E', 1);
   }
   return;
 }
@@ -263,6 +273,7 @@ void do_KillAll (ctx_t* ctx) {
       do_Kill( ctx);
   }
   PL011_putc( UART0, 'A', true );
+  drawLetter('A', 1);
 
   return;
 }
@@ -291,6 +302,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
    
      if (fd == 1) { //write to console
        for( int i = 0; i < n; i++  ) {
+         drawLetter(*x, 1);
   	     PL011_putc( UART0, *x++, true  );
        }
        ctx->gpr[ 0  ] = n;
@@ -302,24 +314,28 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x03 : { //Fork()
       PL011_putc( UART0, 'F', true );
+      drawLetter('F', 1);
       tos_userProgram += 0x00010000; 
       break;
     }
     case 0x04 : {  //Exit()
       PL011_putc( UART0, ' ', true );
       PL011_putc( UART0, 'X', true );
+      drawString(" X", 2, 1);
       do_Exit( ctx );
       break;
     }     
     case 0x05 : { //EXEC()
       if (&ctx->gpr[0] != NULL) {
         PL011_putc( UART0, 'E', true );
+        drawLetter('E', 1);
         do_Exec(ctx);
       }
       break;
     }
     case 0x06 : { //KILL()
       PL011_putc( UART0, 'K', true );
+      drawLetter('K', 1);
       do_Kill(ctx);
       break;
     }
@@ -373,6 +389,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x12 : { //Console has made command
       PL011_putc( UART0, 'K', true );
+      drawLetter('K', 1);
       do_KillAll(ctx);
       break;
     }
@@ -396,7 +413,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x16 : { //Console writes to LCD
       char* c = (char *) ctx->gpr[0];
       int x = (int) ctx->gpr[1];
-      drawString(c, x);
+      drawString(c, x, 0);
       consoleBuffer = 0;
       break;
     }
@@ -408,7 +425,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
             inputBuffer[0] = '\n';
             consoleBuffer = 1;
         }
-        carriageReturn();
+        carriageReturn(0);
         memcpy(c, inputBuffer, consoleBuffer*sizeof(char));
         entered = false;
         consoleBuffer=0;
@@ -420,6 +437,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     default   : { // 0x?? => unknown/unsupported
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'R', true );
+      drawString("ER", 2, 1);
       break;
     }
   

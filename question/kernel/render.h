@@ -31,14 +31,14 @@
 #include "SYS.h"
 
 
-void carriageReturn();
+void carriageReturn(int type);
 
 void renderInit();
 
-void drawLetter(char c);
+void drawLetter(char c, int type);
 
-void deleteLetter(int consoleBuffer);
+int deleteLetter(int consoleBuffer, int type);
 
-void drawString(char* c, int n);
+void drawString(char* c, int n, int type);
 
 #endif
