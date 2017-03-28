@@ -149,6 +149,10 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   if     ( id == GIC_SOURCE_PS20 ) {
       int x = PL050_getc( PS20 );
       char c = decode(x);
+      memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+      memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+      current = &pcb[ 0 ];
+      icurrent = 0;
       if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
       else if(c == '+') entered = true;
       else if(c == '^') nextUpper = true;
@@ -189,8 +193,8 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   if( id == GIC_SOURCE_TIMER0 ) {
     TIMER0->Timer1IntClr = 0x01;
     timer++;
+    scheduler(ctx);
   }
-  scheduler(ctx);
 
   // Step 5: write the interrupt identifier to signal we're done.
 
@@ -439,6 +443,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x16 : { //Console writes to LCD
+      memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+      memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+      current = &pcb[ 0 ];
+      icurrent = 0;
       char* c = (char *) ctx->gpr[0];
       int x = (int) ctx->gpr[1];
       drawString(c, x, 0);

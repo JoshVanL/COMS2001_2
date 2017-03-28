@@ -65,8 +65,8 @@ void main_Philosopher(int argc, char* argv[]) {
   write(STDOUT_FILENO, ":", 2);
   write(STDOUT_FILENO, b, sizeof(b));
   write(STDOUT_FILENO, " ", 2);
-  write(STDOUT_FILENO, c, sizeof(c));
-  write(STDOUT_FILENO, " ", 2);
+  //write(STDOUT_FILENO, c, sizeof(c));
+  //write(STDOUT_FILENO, " ", 2);
 
   int index = (int) atoi(a);
 
