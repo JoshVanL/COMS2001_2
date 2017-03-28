@@ -7,6 +7,9 @@ int currLineKE = 5;
 int currColKE = 410;
 extern char font[128][8];
 
+void drawCursor(int x) {
+    fb[x%600][x/800] = 0x0000;
+}
 
 void upBuffer(int type) {
     if(type ==0) {

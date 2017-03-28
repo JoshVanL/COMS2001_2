@@ -175,12 +175,14 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
+    
+    //drawCursor(x);
 
-    //PL011_putc( UART0, '1',                      true );  
-    //PL011_putc( UART0, '<',                      true ); 
-    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    //PL011_putc( UART0, '>',                      true ); 
+    PL011_putc( UART0, '1',                      true );  
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true ); 
   }
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
@@ -444,7 +446,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x17 : { //Console reads from keys in LCD
-      char* c = (char *) ctx->gpr[0]; char* n = "*";
+      char* c = (char *) ctx->gpr[0]; 
+      char* n = "*";
       if(entered) {
         if(consoleBuffer == 0) {
             inputBuffer[0] = '\n';

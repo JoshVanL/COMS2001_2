@@ -30,6 +30,7 @@
 #include "PL111.h"
 #include "SYS.h"
 
+void drawCursor(int x);
 
 void carriageReturn(int type);
 
