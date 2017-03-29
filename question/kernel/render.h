@@ -4,33 +4,21 @@
 #include "hilevel.h"
 
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
-#include <string.h>
-
-#include <stdlib.h>
 
 
 // Include functionality relating to the   kernel.
 
-#include "lolevel.h"
-#include     "int.h"
-#include    "font.h"
-#include    "decoder.h"
 #include "render.h"
 
 //Include functionality relating to the platform.
 
-#include   "GIC.h"
 #include "PL011.h"
-#include "SP804.h"
 #include "PL050.h"
-#include "PL111.h"
-#include "SYS.h"
 
 void drawCursor(int x, int y);
+
+int mouseClicked();
 
 void carriageReturn(int type);
 
@@ -41,5 +29,7 @@ void drawLetter(char c, int type);
 int deleteLetter(int consoleBuffer, int type);
 
 void drawString(char* c, int n, int type);
+
+int forkButton();
 
 #endif

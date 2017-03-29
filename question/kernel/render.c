@@ -10,6 +10,29 @@ int cursor[2] = {300, 300};
 int underCursor[8][8];
 bool initCursor = false;
 
+int buttonFork() {
+  int r;
+
+  asm volatile( "svc %1     \n" // make system call SYS_FORK
+                "mov %0, r0 \n" // assign r  = r0 
+              : "=r" (r) 
+              : "I" (3)
+              : "r0" );
+
+  return r;
+}
+
+
+void buttonExec( const void* x) {
+  asm volatile( "mov r0, %1 \n" // assign r0 = x
+                "svc %0     \n" // make system call sys_exec
+              :
+              : "i" (0x18), "r" (x)
+              : "r0");
+
+  return;
+}
+
 void drawCursor(int x, int y) {
     int n = 0;
     int m = 0;
@@ -34,6 +57,29 @@ void drawCursor(int x, int y) {
         }
         m++;
     }
+}
+
+int mouseClicked() {
+  char* arg;
+    if(cursor[0] > 510 && cursor[0] < 563) {
+        if(cursor[1] > 50 && cursor[1] < 150) {
+            //button 1
+            return 1;
+        } else if (cursor[1] > 200 && cursor[1] < 300) {
+            //button 2
+            return 2;
+        } else if (cursor[1] > 350 && cursor[1] < 450) {
+            //button 3
+            return 3;
+        } else if (cursor[1] > 500 && cursor[1] < 600) {
+            //button 4
+            return 4;
+        } else if (cursor[1] > 650 && cursor[1] < 750) {
+            //button 5
+            return 5;
+        }
+    }
+
 }
 
 void upBuffer(int type) {
@@ -82,6 +128,7 @@ void renderInit() {
   PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
   ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
 
+  //fill colour
   for( int i = 0; i < 600; i++ ) {
     for( int j = 0; j < 800; j++ ) {
       fb[ i ][ j ] = 0x9CEA;
@@ -89,16 +136,139 @@ void renderInit() {
   }
 
 
+  //verticle line
   for( int i = 0; i < 480; i++ ) {
     for( int j = 400; j < 405; j++ ) {
       fb[ i ][ j ] = 0x0000;
     }
   }
 
+  //horizontal line
   for( int i = 480; i < 485; i++ ) {
     for( int j = 0; j < 800; j++ ) {
       fb[ i ][ j ] = 0x0000;
     }
+  }
+
+  //buttons horizontal
+  for( int i = 510; i < 513; i++ ) {
+    for( int j = 50; j < 150; j++ ) {
+      fb[ i ][ j ] = 0x0000;
+      fb[ i+50 ][ j ] = 0x0000;
+      fb[ i ][ j+150 ] = 0x0000;
+      fb[ i+50 ][ j+150 ] = 0x0000;
+      fb[ i ][ j+300 ] = 0x0000;
+      fb[ i+50 ][ j+300 ] = 0x0000;
+      fb[ i ][ j+450 ] = 0x0000;
+      fb[ i+50 ][ j+450 ] = 0x0000;
+      fb[ i ][ j+600 ] = 0x0000;
+      fb[ i+50 ][ j+600 ] = 0x0000;
+    }
+  }
+
+  //buttons verticle
+  for( int i = 510; i < 563; i++ ) {
+    for( int j = 50; j < 53; j++ ) {
+      fb[ i ][ j ] = 0x0000;
+      fb[ i ][ j+100 ] = 0x0000;
+      fb[ i ][ j+150 ] = 0x0000;
+      fb[ i ][ j+100+150 ] = 0x0000;
+      fb[ i ][ j+300 ] = 0x0000;
+      fb[ i ][ j+100+300 ] = 0x0000;
+      fb[ i ][ j+450 ] = 0x0000;
+      fb[ i ][ j+100+450 ] = 0x0000;
+      fb[ i ][ j+600 ] = 0x0000;
+      fb[ i ][ j+100+600 ] = 0x0000;
+    }
+  }
+  
+  char* chr = font['P'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+70+n] = 0x0000;
+                     fb[2*j+530+m][2*i+220+n] = 0x0000;
+                     fb[2*j+530+m][2*i+370+n] = 0x0000;
+                     fb[2*j+530+m][2*i+520+n] = 0x0000;
+                 }
+             }
+         }
+     }
+  }
+
+  chr = font['1'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+70+n+16] = 0x0000;
+                 }
+             }
+         }
+     }
+  }
+
+  chr = font['2'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+220+n+16] = 0x0000;
+                 }
+             }
+         }
+     }
+  }
+
+  chr = font['3'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+370+n+16] = 0x0000;
+                 }
+             }
+         }
+     }
+  }
+
+  chr = font['S'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+520+n+16] = 0x0000;
+                 }
+             }
+         }
+     }
+  }
+
+  chr = font['K'];
+  char* chr2 = font['A'];
+  for(uint8_t i=0; i<8; i++) {
+     for(uint8_t j=0; j<8; j++) {
+         if(chr[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+670+n] = 0x0000;
+                 }
+             }
+         }
+         if(chr2[j] & (1<<i)) {
+             for(int m=0; m<2; m++) {
+                 for(int n=0; n<2; n++) {
+                     fb[2*j+530+m][2*i+670+n+16] = 0x0000;
+                 }
+             }
+         }
+     }
   }
 
 }
@@ -210,8 +380,3 @@ void drawString(char* c, int n, int type) {
         else drawLetter(c[i], type);
     }
 }
-
-
-
-
-

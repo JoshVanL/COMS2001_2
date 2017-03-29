@@ -16,6 +16,9 @@ int consoleBuffer=0;
 char inputBuffer[200];
 int cursorPos[2] = {300,300};
 
+extern void     main_P3();
+extern void     main_P4();
+extern void     main_P5();
 extern void     main_console();
 extern uint32_t tos_console(); 
 
@@ -81,6 +84,10 @@ void printZero() {
 }
 
 void change_toConsole ( ctx_t* ctx) {
+  memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+  memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+  current = &pcb[ 0 ];
+  icurrent = 0;
   printZero();
   return;
 }
@@ -141,94 +148,6 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   return;
 }
 
-int mouseCode = 0;
-int mouseChangeX;
-int mouseChangeY;
-int mouseState;
-
-void hilevel_handler_irq( ctx_t* ctx ) {
-  // Step 2: read  the interrupt identifier so we know the source.
-
-  uint32_t id = GICC0->IAR;
-
-
-  if     ( id == GIC_SOURCE_PS20 ) {
-      int x = PL050_getc( PS20 );
-      char c = decode(x);
-      memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
-      memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
-      current = &pcb[ 0 ];
-      icurrent = 0;
-      if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
-      else if(c == '+') entered = true;
-      else if(c == '^') nextUpper = true;
-      else if(c == '/') nextUpper = false;
-      else if(c != '~') {
-          if (nextUpper) {
-              c -= 32;
-          }
-          drawLetter(c, 0);
-          inputBuffer[consoleBuffer] = c;
-          consoleBuffer++;
-    }
-
-
-
-    //for (int i=0; i<30; i++) {
-    //    drawLetter(c, i*17+40, 40);
-    //    c++;
-    //}
-    //PL011_putc( UART0, '<',                      true ); 
-    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    //PL011_putc( UART0, '>',                      true ); 
-  }
-  else if( id == GIC_SOURCE_PS21 ) {
-
-    uint8_t x = PL050_getc( PS21 );
-    if (x = 0x09) {
-        //mouse clicked
-        mouseCode = 3;
-    } else if(mouseCode == 0) {
-        mouseCode += 1;
-        mouseState = x;
-    } else if (mouseCode == 1) {
-        mouseCode += 1;
-        mouseChangeY = x - ((mouseState << 4) & 0x100);
-    } else if (mouseCode == 2) {
-        mouseCode = 0;
-        mouseChangeX = x - ((mouseState << 3) & 0x100);
-        cursorPos[0] -= mouseChangeX;
-        cursorPos[1] += mouseChangeY;
-        if(cursorPos[0] > 590) cursorPos[0] = 590;
-        if(cursorPos[0] < 0) cursorPos[0] = 0;
-        if(cursorPos[1] > 795) cursorPos[1] = 795;
-        if(cursorPos[1] < 0) cursorPos[1] = 0;
-
-    }
-
-    drawCursor(cursorPos[0], cursorPos[1]);
-    
-    PL011_putc( UART0, '1',                      true );  
-    PL011_putc( UART0, '<',                      true ); 
-    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    PL011_putc( UART0, '>',                      true ); 
-  }
-
-  // Step 4: handle the interrupt, then clear (or reset) the source.
-  if( id == GIC_SOURCE_TIMER0 ) {
-    TIMER0->Timer1IntClr = 0x01;
-    timer++;
-    scheduler(ctx);
-  }
-
-  // Step 5: write the interrupt identifier to signal we're done.
-
-  GICC0->EOIR = id;
-
-  return;
-}
 
 extern uint32_t _heap_start;
 void* tos_userProgram = &_heap_start;
@@ -277,6 +196,41 @@ void do_Exec (ctx_t* ctx ) {
   return;
 }
 
+void do_buttonExec (ctx_t* ctx ) {
+  void* (*prog) = ( void* )( ctx->gpr[ 0 ] );
+
+  pidNum++;
+  active_pids[count] = pidNum;
+  memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
+  pcb[ count  ].pid      = pidNum;
+  pcb[ count  ].ctx.cpsr = 0x50;
+  pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
+  pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
+  count++;
+
+  memcpy( ctx, &pcb[ count-1 ].ctx, sizeof( ctx_t  )  );
+  current = &pcb[ count-1 ];
+  icurrent = count-1;
+
+  char x[2];
+  uint32_t num = pcb[ icurrent].pid %10;
+  x[0] = '0' +  num;
+  num = (pcb[ icurrent].pid - num)/10;
+  x[1] = '0' + num;
+
+  PL011_putc( UART0, '\n', true ); 
+  PL011_putc( UART0, x[1], true ); 
+  PL011_putc( UART0, x[0], true ); 
+  PL011_putc( UART0, ':', true ); 
+  PL011_putc( UART0, ' ', true ); 
+  carriageReturn(1);
+  drawLetter(x[1], 1);
+  drawLetter(x[0], 1);
+  drawString(": ", 2, 1);
+
+  priority[count] = 2;
+  return;
+}
 
 void do_Exit (ctx_t* ctx ) {
   for (uint32_t i = icurrent; i<count; i++) {
@@ -445,7 +399,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       change_toConsole(ctx);
       break;
     }
-    case 0x12 : { //Console has made command
+    case 0x12 : { //Kill all processes
       PL011_putc( UART0, 'K', true );
       drawLetter('K', 1);
       do_KillAll(ctx);
@@ -504,6 +458,114 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
   
   }
+
+  return;
+}
+
+int mouseCode = 0;
+int mouseChangeX;
+int mouseChangeY;
+int mouseState;
+bool mouseLocked = false;
+
+void hilevel_handler_irq( ctx_t* ctx ) {
+  // Step 2: read  the interrupt identifier so we know the source.
+
+  uint32_t id = GICC0->IAR;
+
+  if( id == GIC_SOURCE_TIMER0 ) {
+    TIMER0->Timer1IntClr = 0x01;
+    timer++;
+    scheduler(ctx);
+  }
+
+
+  if     ( id == GIC_SOURCE_PS20 ) {
+      int x = PL050_getc( PS20 );
+      char c = decode(x);
+      memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+      memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+      current = &pcb[ 0 ];
+      icurrent = 0;
+      if(c == '#') consoleBuffer = deleteLetter(consoleBuffer, 0);
+      else if(c == '+') entered = true;
+      else if(c == '^') nextUpper = true;
+      else if(c == '/') nextUpper = false;
+      else if(c != '~') {
+          if (nextUpper) {
+              c -= 32;
+          }
+          drawLetter(c, 0);
+          inputBuffer[consoleBuffer] = c;
+          consoleBuffer++;
+    }
+
+
+
+    //for (int i=0; i<30; i++) {
+    //    drawLetter(c, i*17+40, 40);
+    //    c++;
+    //}
+    //PL011_putc( UART0, '<',                      true ); 
+    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    //PL011_putc( UART0, '>',                      true ); 
+  }
+  else if( id == GIC_SOURCE_PS21 ) {
+
+    uint8_t x = PL050_getc( PS21 );
+    if (x == 0x09 && mouseCode == 0) {
+        //mouse clicked
+        int n = mouseClicked();
+        if (n > 0 && n < 6) {
+            change_toConsole( ctx );
+            PL011_putc( UART0, 'F', true );
+            drawLetter('F', 1);
+            tos_userProgram += 0x00010000; 
+            if (n == 1) {
+                ctx->gpr[0] = (uint32_t) &main_P3;
+            } else if (n == 2) {
+                ctx->gpr[0] = (uint32_t) &main_P4;
+            } if (n == 3) {
+                ctx->gpr[0] = (uint32_t) &main_P5;
+            }
+            drawLetter('E', 1);
+            do_Exec(ctx);
+        }
+
+            
+    } 
+    if(mouseCode == 0) {
+        mouseCode += 1;
+        mouseState = x;
+    } else if (mouseCode == 1) {
+        mouseCode += 1;
+        mouseChangeY = x - ((mouseState << 4) & 0x100);
+    } else if (mouseCode == 2) {
+        mouseCode = 0;
+        mouseChangeX = x - ((mouseState << 3) & 0x100);
+        cursorPos[0] -= mouseChangeX;
+        cursorPos[1] += mouseChangeY;
+        if(cursorPos[0] > 590) cursorPos[0] = 590;
+        if(cursorPos[0] < 0) cursorPos[0] = 0;
+        if(cursorPos[1] > 795) cursorPos[1] = 795;
+        if(cursorPos[1] < 0) cursorPos[1] = 0;
+    }
+
+    drawCursor(cursorPos[0], cursorPos[1]);
+    
+    //PL011_putc( UART0, '1',                      true );  
+    //PL011_putc( UART0, '<',                      true ); 
+    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    //PL011_putc( UART0, '>',                      true ); 
+  }
+
+  // Step 4: handle the interrupt, then clear (or reset) the source.
+
+  // Step 5: write the interrupt identifier to signal we're done.
+
+  GICC0->EOIR = id;
 
   return;
 }
