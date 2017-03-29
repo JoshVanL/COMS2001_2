@@ -6,14 +6,39 @@ int currCol = 5;
 int currLineKE = 5;
 int currColKE = 410;
 extern char font[128][8];
+int cursor[2] = {300, 300};
+int underCursor[8][8];
+bool initCursor = false;
 
-void drawCursor(int x) {
-    fb[x%600][x/800] = 0x0000;
+void drawCursor(int x, int y) {
+    int n = 0;
+    int m = 0;
+    if(initCursor) {
+        for(int i=cursor[0]; i<cursor[0]+8; i++) {
+            for(int j=cursor[1]; j<cursor[1]+8; j++) {
+                fb[i][j] = underCursor[n][m];
+                n++;
+            }
+            m++;
+        }
+    }
+    initCursor = true;
+    n = m = 0;
+    cursor[0] = x;
+    cursor[1] = y;
+    for(int i=x; i<x+8; i++) {
+        for(int j=y; j<y+8; j++) {
+            underCursor[n][m] = fb[i][j];
+            n++;
+            fb[i][j] = 0x000F;
+        }
+        m++;
+    }
 }
 
 void upBuffer(int type) {
     if(type ==0) {
-        for(int i=0; i<600; i++) {
+        for(int i=0; i<480; i++) {
             for(int j=0; j<400; j++) {
                 fb[ i ][ j ] = 0x9CEA;
             }
@@ -21,7 +46,7 @@ void upBuffer(int type) {
         currLine=5;
         currCol=5;
     } else {
-      for(int i=0; i<600; i++) {
+      for(int i=0; i<480; i++) {
           for(int j=410; j<800; j++) {
               fb[ i ][ j ] = 0x9CEA;
           }
@@ -63,19 +88,19 @@ void renderInit() {
     }
   }
 
-  for( int i = 0; i < 600; i++ ) {
+
+  for( int i = 0; i < 480; i++ ) {
     for( int j = 400; j < 405; j++ ) {
       fb[ i ][ j ] = 0x0000;
     }
   }
-  
 
-
-  for( int i=0; i<16; i++) {
-      for(int j =0; j<12; j++) {
-          fb[currLine+i][currCol+j] = 0x0000;
-        }
+  for( int i = 480; i < 485; i++ ) {
+    for( int j = 0; j < 800; j++ ) {
+      fb[ i ][ j ] = 0x0000;
     }
+  }
+
 }
 
 
@@ -103,7 +128,7 @@ void carriageReturn(int type) {
 
 void drawLetter(char c, int type) {
   if (type == 0) {
-     if(currLine > 560) upBuffer(type);
+     if(currLine > 460) upBuffer(type);
      for( int i=0; i<16; i++) {
          for(int j =0; j<12; j++) {
              fb[currLine+i][currCol+j] = 0x9CEA;
@@ -132,7 +157,7 @@ void drawLetter(char c, int type) {
            }
        }
     } else {
-     if(currLineKE > 560) upBuffer(type);
+     if(currLineKE > 460) upBuffer(type);
      for( int i=0; i<16; i++) {
          for(int j =0; j<12; j++) {
              fb[currLineKE+i][currColKE+j] = 0x9CEA;

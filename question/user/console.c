@@ -142,7 +142,7 @@ void main_console() {
           puts(" ", 1);
         }
         puts("\n", 1);
-        console_writeLCD("\n", 1);
+        console_writeLCD("\n\n", 2);
     } 
     else if( 0 == strcmp( p, NULL ) ) {
     }

@@ -14,6 +14,7 @@ bool nextUpper = false;
 
 int consoleBuffer=0;
 char inputBuffer[200];
+int cursorPos[2] = {300,300};
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -140,6 +141,11 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   return;
 }
 
+int mouseCode = 0;
+int mouseChangeX;
+int mouseChangeY;
+int mouseState;
+
 void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
@@ -178,10 +184,31 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     //PL011_putc( UART0, '>',                      true ); 
   }
   else if( id == GIC_SOURCE_PS21 ) {
-    uint8_t x = PL050_getc( PS21 );
-    
-    //drawCursor(x);
 
+    uint8_t x = PL050_getc( PS21 );
+    if (x = 0x09) {
+        //mouse clicked
+        mouseCode = 3;
+    } else if(mouseCode == 0) {
+        mouseCode += 1;
+        mouseState = x;
+    } else if (mouseCode == 1) {
+        mouseCode += 1;
+        mouseChangeY = x - ((mouseState << 4) & 0x100);
+    } else if (mouseCode == 2) {
+        mouseCode = 0;
+        mouseChangeX = x - ((mouseState << 3) & 0x100);
+        cursorPos[0] -= mouseChangeX;
+        cursorPos[1] += mouseChangeY;
+        if(cursorPos[0] > 590) cursorPos[0] = 590;
+        if(cursorPos[0] < 0) cursorPos[0] = 0;
+        if(cursorPos[1] > 795) cursorPos[1] = 795;
+        if(cursorPos[1] < 0) cursorPos[1] = 0;
+
+    }
+
+    drawCursor(cursorPos[0], cursorPos[1]);
+    
     PL011_putc( UART0, '1',                      true );  
     PL011_putc( UART0, '<',                      true ); 
     PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
