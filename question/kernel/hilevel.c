@@ -13,7 +13,7 @@ bool entered = false;
 bool nextUpper = false;
 
 int consoleBuffer=0;
-char* inputBuffer= "";
+char inputBuffer[200];
 
 extern void     main_console();
 extern uint32_t tos_console(); 
@@ -45,7 +45,7 @@ void scheduler( ctx_t* ctx  ) {
   icurrent = next;
 
   if(changed) {
-    char* x;
+    char x[2];
     uint32_t num = pcb[ icurrent].pid %10;
     x[0] = '0' +  num;
     num = (pcb[ icurrent].pid - num)/10;
@@ -230,7 +230,7 @@ void do_Exec (ctx_t* ctx ) {
   current = &pcb[ count-1 ];
   icurrent = count-1;
 
-  char* x;
+  char x[2];
   uint32_t num = pcb[ icurrent].pid %10;
   x[0] = '0' +  num;
   num = (pcb[ icurrent].pid - num)/10;
@@ -326,9 +326,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x01 : { // 0x01 => write( fd, x, n  )
-     int   fd = ( int    )( ctx->gpr[ 0  ]  );
-     char*  x = ( char*  )( ctx->gpr[ 1  ]  );
-     int    n = ( int    )( ctx->gpr[ 2  ]  );
+     int   fd = ( int    )( ctx->gpr[ 4  ]  );
+     char*  x = ( char*  )( ctx->gpr[ 5  ]  );
+     int    n = ( int    )( ctx->gpr[ 6  ]  );
 
    
      if (fd == 1) { //write to console
@@ -336,7 +336,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
        for( int i = 0; i < n; i++  ) {
   	     PL011_putc( UART0, *x++, true  );
        }
-       ctx->gpr[ 0  ] = n;
+       ctx->gpr[ 4  ] = n;
      }   
      break;
     }
@@ -379,10 +379,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
     case 0x08 : { //Share() Read-Write
       priority[icurrent] = 20;
-      int   fd = ( int    )( ctx->gpr[ 0  ]  );
-      uint32_t pnt = ( uint32_t  )( ctx->gpr[ 1  ]  );
-      uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 2  ]  );
-      uint32_t  n = ( uint32_t  )( ctx->gpr[ 3  ]  );
+      int   fd = ( int    )( ctx->gpr[ 8  ]  );
+      uint32_t pnt = ( uint32_t  )( ctx->gpr[ 9  ]  );
+      uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 10  ]  );
+      uint32_t  n = ( uint32_t  )( ctx->gpr[ 11  ]  );
 
       //uint32_t* curr = (uint32_t*) (share_loc[pnt]);
       uint32_t* curr = (uint32_t*) (sharred_current);
@@ -396,7 +396,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         priority[icurrent] = 0;
       }
       flag_share = false;
-      priority[icurrent] = 0;
       break;
     }
     case 0x09 : { //Semaphore
@@ -443,18 +442,18 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     case 0x16 : { //Console writes to LCD
-      memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
-      memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
+      //memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
+      //memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
       current = &pcb[ 0 ];
       icurrent = 0;
-      char* c = (char *) ctx->gpr[0];
-      int x = (int) ctx->gpr[1];
+      char* c = (char *) ctx->gpr[8];
+      int x = (int) ctx->gpr[9];
       drawString(c, x, 0);
       consoleBuffer = 0;
       break;
     }
     case 0x17 : { //Console reads from keys in LCD
-      char* c = (char *) ctx->gpr[0]; 
+      char* c = (char *) ctx->gpr[8]; 
       char* n = "*";
       if(entered) {
         if(consoleBuffer == 0) {

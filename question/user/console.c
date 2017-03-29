@@ -119,28 +119,27 @@ void main_console() {
       killall();
     } 
     else if( 0 == strcmp( p, "ps" ) ) {
-        char* c;
+        char c[2];
         int ps = processes_count();
         int k =1;
 
         puts ( "pids [", 6);
-        console_writeLCD ( "pids [", 6);
+        console_writeLCD ( "\npids [", 7);
         itoa(c, ps);
         puts (c, 2);
         if(ps > 10) k =2;
         console_writeLCD (c, k);
         puts ( "] : ", 4);
-        console_writeLCD ( "] : ", 4);
+        console_writeLCD ( "] : 0 ", 5);
         PL011_putc( UART1, '0', true ); 
-        console_writeLCD ( "0", 1);
 
         for(int i =1; i<ps; i++) {
           int p = processes_pid(i);
-          puts(" ", 1);
           console_writeLCD(" ", 1);
           itoa(c, p);
           puts(c, 2);
           console_writeLCD(c, 2);
+          puts(" ", 1);
         }
         puts("\n", 1);
         console_writeLCD("\n", 1);

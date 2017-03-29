@@ -59,14 +59,14 @@ void yield() {
 int write( int fd, const void* x, size_t n ) {
   int r;
 
-  asm volatile( "mov r0, %2 \n" // assign r0 = fd
-                "mov r1, %3 \n" // assign r1 =  x
-                "mov r2, %4 \n" // assign r2 =  n
+  asm volatile( "mov r4, %2 \n" // assign r0 = fd
+                "mov r5, %3 \n" // assign r1 =  x
+                "mov r6, %4 \n" // assign r2 =  n
                 "svc %1     \n" // make system call SYS_WRITE
-                "mov %0, r0 \n" // assign r  = r0
+                //"mov %0, r4 \n" // assign r  = r0
               : "=r" (r) 
               : "I" (SYS_WRITE), "r" (fd), "r" (x), "r" (n)
-              : "r0", "r1", "r2" );
+              : "r4", "r5", "r6" );
 
   return r;
 }
@@ -149,15 +149,15 @@ int share_init() {
 int share( int fd, int pnt, int* x, int n) {
   int r;
 
-  asm volatile( "mov r0, %2 \n" // assign r0 = fd
-                "mov r1, %3 \n" // assign r1 =  pnt
-                "mov r2, %4 \n" // assign r3 = x
-                "mov r3, %5 \n" // assign r4 =  n
+  asm volatile( "mov r8, %2 \n" // assign r0 = fd
+                "mov r9, %3 \n" // assign r1 =  pnt
+                "mov r10, %4 \n" // assign r3 = x
+                "mov r11, %5 \n" // assign r4 =  n
                 "svc %1     \n" // make system call SYS_WRITE
                 "mov %0, r0 \n" //  assign r  = r0
               : "=r" (r)           
               : "I" (SYS_SHARE), "r" (fd), "r" (pnt), "r" (x), "r" (n)
-              : "r0", "r1", "r2",  "r3" );
+              : "r8", "r9", "r10",  "r11" );
                                    
   return r;                        
 }                                  
@@ -243,25 +243,25 @@ int setPriority(int n) {
 
 int console_writeLCD(char* x, int n) {
   int r;
-  asm volatile( "mov r0, %2 \n"  //assign r0 = x
-                "mov r1, %3 \n" // assign r1 = n
+  asm volatile( "mov r8, %2 \n"  //assign r0 = x
+                "mov r9, %3 \n" // assign r1 = n
                 "svc %1     \n" // make system call sys_
                 "mov %0, r0 \n" // assign r  = r0
               : "=r" (r) 
               : "i" (SYS_CON_LCD_WRI), "r" (x), "r" (n)
-              : "r0", "r1", "r2" );
+              : "r8", "r9" );
 
   return r;
 }
 
 int console_readLCD(char* x) {
   int r;
-  asm volatile( "mov r0, %2 \n"  //assign r5 = x
+  asm volatile( "mov r8, %2 \n"  //assign r5 = x
                 "svc %1     \n" // make system call sys_
                 "mov %0, r0 \n" // assign r  = r5
               : "=r" (r) 
               : "i" (SYS_CON_LCD_REA), "r" (x)
-              : "r0", "r1" );
+              : "r8" );
 
   return r;
 }
