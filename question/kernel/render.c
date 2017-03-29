@@ -10,29 +10,6 @@ int cursor[2] = {300, 300};
 int underCursor[8][8];
 bool initCursor = false;
 
-int buttonFork() {
-  int r;
-
-  asm volatile( "svc %1     \n" // make system call SYS_FORK
-                "mov %0, r0 \n" // assign r  = r0 
-              : "=r" (r) 
-              : "I" (3)
-              : "r0" );
-
-  return r;
-}
-
-
-void buttonExec( const void* x) {
-  asm volatile( "mov r0, %1 \n" // assign r0 = x
-                "svc %0     \n" // make system call sys_exec
-              :
-              : "i" (0x18), "r" (x)
-              : "r0");
-
-  return;
-}
-
 void drawCursor(int x, int y) {
     int n = 0;
     int m = 0;
@@ -80,6 +57,7 @@ int mouseClicked() {
         }
     }
 
+  return 0;
 }
 
 void upBuffer(int type) {
@@ -198,7 +176,7 @@ void renderInit() {
      }
   }
 
-  chr = font['1'];
+  chr = font['3'];
   for(uint8_t i=0; i<8; i++) {
      for(uint8_t j=0; j<8; j++) {
          if(chr[j] & (1<<i)) {
@@ -211,7 +189,7 @@ void renderInit() {
      }
   }
 
-  chr = font['2'];
+  chr = font['4'];
   for(uint8_t i=0; i<8; i++) {
      for(uint8_t j=0; j<8; j++) {
          if(chr[j] & (1<<i)) {
@@ -224,7 +202,7 @@ void renderInit() {
      }
   }
 
-  chr = font['3'];
+  chr = font['5'];
   for(uint8_t i=0; i<8; i++) {
      for(uint8_t j=0; j<8; j++) {
          if(chr[j] & (1<<i)) {

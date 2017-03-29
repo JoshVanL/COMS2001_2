@@ -5,7 +5,7 @@ pcb_t pcb[ 50  ], *current = NULL;
 int priority[ 50 ];
 uint32_t count=0;
 uint32_t icurrent = 0;
-uint32_t pidNum = 0;
+uint32_t pidNum = 1;
 uint32_t timer =0;
 uint32_t active_pids[50];
 
@@ -160,7 +160,6 @@ void do_Exec (ctx_t* ctx ) {
   char* argv[argc];
   for(int i=0; i<3; i++)argv[i] = stra[i];
 
-  pidNum++;
   active_pids[count] = pidNum;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
   pcb[ count  ].pid      = pidNum;
@@ -169,6 +168,7 @@ void do_Exec (ctx_t* ctx ) {
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
   pcb[ count  ].ctx.gpr[0]   = ( uint32_t  )( argc );    
   pcb[ count  ].ctx.gpr[1]   = ( uint32_t  )( argv );    
+  pidNum++;
   count++;
 
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
@@ -196,41 +196,6 @@ void do_Exec (ctx_t* ctx ) {
   return;
 }
 
-void do_buttonExec (ctx_t* ctx ) {
-  void* (*prog) = ( void* )( ctx->gpr[ 0 ] );
-
-  pidNum++;
-  active_pids[count] = pidNum;
-  memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
-  pcb[ count  ].pid      = pidNum;
-  pcb[ count  ].ctx.cpsr = 0x50;
-  pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
-  pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
-  count++;
-
-  memcpy( ctx, &pcb[ count-1 ].ctx, sizeof( ctx_t  )  );
-  current = &pcb[ count-1 ];
-  icurrent = count-1;
-
-  char x[2];
-  uint32_t num = pcb[ icurrent].pid %10;
-  x[0] = '0' +  num;
-  num = (pcb[ icurrent].pid - num)/10;
-  x[1] = '0' + num;
-
-  PL011_putc( UART0, '\n', true ); 
-  PL011_putc( UART0, x[1], true ); 
-  PL011_putc( UART0, x[0], true ); 
-  PL011_putc( UART0, ':', true ); 
-  PL011_putc( UART0, ' ', true ); 
-  carriageReturn(1);
-  drawLetter(x[1], 1);
-  drawLetter(x[0], 1);
-  drawString(": ", 2, 1);
-
-  priority[count] = 2;
-  return;
-}
 
 void do_Exit (ctx_t* ctx ) {
   for (uint32_t i = icurrent; i<count; i++) {
@@ -517,7 +482,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     if (x == 0x09 && mouseCode == 0) {
         //mouse clicked
         int n = mouseClicked();
-        if (n > 0 && n < 6) {
+        if (n > 0 && n < 4) {
             change_toConsole( ctx );
             PL011_putc( UART0, 'F', true );
             drawLetter('F', 1);
@@ -531,8 +496,43 @@ void hilevel_handler_irq( ctx_t* ctx ) {
             }
             drawLetter('E', 1);
             do_Exec(ctx);
-        }
+        } else if(n == 4) {
+            change_toConsole( ctx );
+            drawString( "\npids [", 7, 0);
+            char c[2];
+            if(pidNum< 10) {
+                c[0] = pidNum + '0';
+                drawString(c, 1, 0);
+            } else {
+                c[0] = '1';
+                c[1] = (pidNum - 10) + '0';
+                drawString(c, 2, 0);
+            }
+            drawString ( "] : 0 ", 5, 0);
 
+            int p;
+            for(int i =1; i<pidNum; i++) {
+              p = active_pids[i];
+              drawString(" ", 1, 0);
+              if(p< 10) {
+                  c[0] = p + '0';
+                  drawString(c, 1, 0);
+              } else {
+                  c[0] = '1';
+                  c[1] = (p - 10) + '0';
+                  drawString(c, 2, 0);
+              }
+             
+            }
+            drawString("\n\n", 2, 0);
+            drawString("shell$ ", 7, 0);
+            consoleBuffer = 0;
+        } else if (n == 5) {
+            change_toConsole( ctx );
+            drawLetter('K', 1);
+            do_KillAll(ctx);
+            pidNum = 1;
+        }
             
     } 
     if(mouseCode == 0) {
