@@ -41,7 +41,7 @@ void scheduler( ctx_t* ctx  ) {
 
   for (uint32_t i = 0; i < count; i++) priority[i] +=1;
 
-  priority[next] -= 2;
+  priority[next] = 0;
 
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ next ].ctx, sizeof( ctx_t  )  );
@@ -347,7 +347,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x09 : { //Semaphore
       if (flag_share) {
           ctx->gpr[0] = 1;
-          if(priority[icurrent] > 3) priority[icurrent] -= 1;
+          if (priority[icurrent] >1) priority[icurrent]-=1;
       }
       else {
           flag_share = true;
@@ -500,26 +500,26 @@ void hilevel_handler_irq( ctx_t* ctx ) {
             change_toConsole( ctx );
             drawString( "\npids [", 7, 0);
             char c[2];
-            if(pidNum< 10) {
-                c[0] = pidNum + '0';
+            if(count< 10) {
+                c[0] = count + '0';
                 drawString(c, 1, 0);
             } else {
-                c[0] = '1';
-                c[1] = (pidNum - 10) + '0';
+                c[0] = (count/10) + '0';
+                c[1] = (count % 10) + '0';
                 drawString(c, 2, 0);
             }
             drawString ( "] : 0 ", 5, 0);
 
             int p;
-            for(int i =1; i<pidNum; i++) {
+            for(int i =1; i<count; i++) {
               p = active_pids[i];
               drawString(" ", 1, 0);
               if(p< 10) {
                   c[0] = p + '0';
                   drawString(c, 1, 0);
               } else {
-                  c[0] = '1';
-                  c[1] = (p - 10) + '0';
+                  c[0] = (p/10) + '0';
+                  c[1] = (p % 10) + '0';
                   drawString(c, 2, 0);
               }
              
@@ -531,7 +531,6 @@ void hilevel_handler_irq( ctx_t* ctx ) {
             change_toConsole( ctx );
             drawLetter('K', 1);
             do_KillAll(ctx);
-            pidNum = 1;
         }
             
     } 

@@ -57,7 +57,6 @@ void eat(int n) {
 }
 
 void main_Philosopher(int argc, char* argv[]) {
-  setPriority(20);
 
   int C[20];
 
@@ -86,16 +85,16 @@ void main_Philosopher(int argc, char* argv[]) {
   int pnt = c[1] - '0';
   if(c[0] == '1') pnt += 10;
 
+  setPriority(10);
  
   while(semaphore());
   share(SHARE_READ, pnt, C, 20); 
-  setPriority(20);
+  setPriority(10);
  
   C[19] =1;
 
   while(semaphore());
   share(SHARE_WRITE, pnt, C, 20); 
-  setPriority(-20);
 
   while(C[0] ==1){
     setPriority(-20);

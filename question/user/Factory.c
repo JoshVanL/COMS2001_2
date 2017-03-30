@@ -35,9 +35,9 @@ void main_Factory(int argc, char* argv[]) {
     while(semaphore());
     write(STDOUT_FILENO, ">> ", 3);
     share(SHARE_WRITE, pnt, C, 20);
-    setPriority(5);
 
     for(int i=0; i<n; i++) {
+      setPriority(10);
       if( i < 10){
           arg[0][0] =  '0';
           arg[0][1] = i + '0';
@@ -51,17 +51,17 @@ void main_Factory(int argc, char* argv[]) {
       exec(addr, arg);
 
       while(C[19] ==0){
-        setPriority(5);
+        setPriority(10);
         while(semaphore());
         share(SHARE_READ, pnt, C, 20); 
       }
-      setPriority(5);
+      setPriority(10);
 
       C[19]=0;
 
       while(semaphore());
       share(SHARE_WRITE, pnt, C, 20);
-      setPriority(5);
+      setPriority(10);
 
       write(STDOUT_FILENO, ">> ", 3);
     }
