@@ -30,7 +30,7 @@ void drawCursor(int x, int y) {
         for(int j=y; j<y+8; j++) {
             underCursor[n][m] = fb[i][j];
             n++;
-            fb[i][j] = 0x000F;
+            fb[i][j] = 0x7BEF;
         }
         m++;
     }
@@ -127,6 +127,18 @@ void renderInit() {
       fb[ i ][ j ] = 0x0000;
     }
   }
+
+  //fill buttons
+  for( int i = 510; i < 563; i++ ) {
+    for( int j = 50; j < 150; j++ ) {
+      fb[i][j] = 0xA352;
+      fb[i][j+150] = 0x981F;
+      fb[i][j+300] = 0x79E4;
+      fb[i][j+450] = 0xFFEA;
+      fb[i][j+600] = 0x30EA;
+    }
+  }
+
 
   //buttons horizontal
   for( int i = 510; i < 513; i++ ) {

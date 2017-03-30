@@ -41,7 +41,7 @@ void putdown(int index, int n, int pnt) {
 
 void think(int n) {
 
-  int sleep = curr_timer() + 3*n +6;
+  int sleep = curr_timer() + 2*n +6;
   while(curr_timer() < sleep);
 
   return;
@@ -57,44 +57,48 @@ void eat(int n) {
 }
 
 void main_Philosopher(int argc, char* argv[]) {
-  int n;
+  setPriority(20);
+
   int C[20];
 
+  char* d = (char *) argv;
   char a[2];
   char b[2];
   char c[2]; 
-  a[0]  = argv[0][0];
-  a[1]  = argv[0][1];
-  b[0]  = argv[1][0];
-  b[1]  = argv[1][1];
-  c[0]  = argv[2][0];
-  c[1]  = argv[2][1];
-  char* d;
+  a[0] = d[0];
+  a[1] = d[1];
+  b[0] = d[2];
+  b[1] = d[3];
+  c[0] = d[4];
+  c[1] = d[5];
 
   write(STDOUT_FILENO, a, 2);
   write(STDOUT_FILENO, ":", 1);
-  write(STDOUT_FILENO, b, sizeof(b));
-  write(STDOUT_FILENO, " ", 1);
-  //write(STDOUT_FILENO, c, sizeof(c));
-  //write(STDOUT_FILENO, " ", 2);
+  write(STDOUT_FILENO, b, 2);
+  write(STDOUT_FILENO, ":", 1);
+  write(STDOUT_FILENO, c, 2);
+  write(STDOUT_FILENO, " ", 2);
 
-  int index = (int) atoi(a);
+  int index = a[1] - '0';
+  if(a[0] == '1') index += 10;
+  int n = b[1] - '0';
+  if(b[0] == '1') n+= 10;
+  int pnt = c[1] - '0';
+  if(c[0] == '1') pnt += 10;
 
-  n = atoi(b);
-  int pnt = atoi(c);
-  setPriority(10);
  
   while(semaphore());
   share(SHARE_READ, pnt, C, 20); 
-  setPriority(10);
+  setPriority(20);
  
   C[19] =1;
 
   while(semaphore());
   share(SHARE_WRITE, pnt, C, 20); 
+  setPriority(-20);
 
   while(C[0] ==1){
-    setPriority(-5);
+    setPriority(-20);
     while(semaphore());
     share(SHARE_READ, pnt, C, 20); 
   }

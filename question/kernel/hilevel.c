@@ -41,7 +41,7 @@ void scheduler( ctx_t* ctx  ) {
 
   for (uint32_t i = 0; i < count; i++) priority[i] +=1;
 
-  priority[next] = 0;
+  priority[next] -= 2;
 
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ next ].ctx, sizeof( ctx_t  )  );
@@ -105,7 +105,7 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
   * - enabling IRQ interrupts.
   */
   
-  TIMER0->Timer1Load  = 0x00030000; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Load  = 0x00020000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
@@ -330,8 +330,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       uint32_t*  x = ( uint32_t*  )( ctx->gpr[ 10  ]  );
       uint32_t  n = ( uint32_t  )( ctx->gpr[ 11  ]  );
 
-      //uint32_t* curr = (uint32_t*) (share_loc[pnt]);
-      uint32_t* curr = (uint32_t*) (sharred_current);
+      uint32_t* curr = (uint32_t*) (share_loc[pnt]);
+      //uint32_t* curr = (uint32_t*) (sharred_current);
     
       if (fd == 0) {
          memcpy(&curr[0], x,  n*sizeof(int));
@@ -347,7 +347,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x09 : { //Semaphore
       if (flag_share) {
           ctx->gpr[0] = 1;
-          if (priority[icurrent] >1) priority[icurrent]-=2;
+          if(priority[icurrent] > 3) priority[icurrent] -= 1;
       }
       else {
           flag_share = true;
