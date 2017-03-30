@@ -1,5 +1,6 @@
 #include "hilevel.h"
 
+//Global variables
 
 pcb_t pcb[ 50  ], *current = NULL;
 int priority[ 50 ];
@@ -26,6 +27,7 @@ extern uint32_t tos_shared();
 uint32_t* sharred_current = (uint32_t*) (tos_shared);
 
 
+//Priority based scheduler
 void scheduler( ctx_t* ctx  ) {
   bool changed=false;
   int32_t next = 0;
@@ -70,6 +72,7 @@ void scheduler( ctx_t* ctx  ) {
 }
 
 
+//Print 00s, console command made
 void printZero() {
 
   PL011_putc( UART0, '\n', true ); 
@@ -83,6 +86,7 @@ void printZero() {
   return;
 }
 
+//Change running process to console
 void change_toConsole ( ctx_t* ctx) {
   memcpy( &pcb[ icurrent  ].ctx, ctx, sizeof( ctx_t  )  );
   memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t  )  );
@@ -94,6 +98,7 @@ void change_toConsole ( ctx_t* ctx) {
 
 
 
+//Initiate inpterups
 void hilevel_handler_rst(  ctx_t* ctx ) {
 
   /* Configure the mechanism for interrupt handling by
@@ -149,9 +154,11 @@ void hilevel_handler_rst(  ctx_t* ctx ) {
 }
 
 
+//Pointer to the heap for use programs
 extern uint32_t _heap_start;
 void* tos_userProgram = &_heap_start;
 
+//Execute a user program
 void do_Exec (ctx_t* ctx ) {
   void* (*prog) = ( void* )( ctx->gpr[ 0 ] );
   char** (stra) = (char**) (ctx->gpr[1]);
@@ -163,6 +170,7 @@ void do_Exec (ctx_t* ctx ) {
   active_pids[count] = pidNum;
   memset( &pcb[ count  ], 0, sizeof( pcb_t  )  );
   pcb[ count  ].pid      = pidNum;
+  pcb[ count  ].parent   = current->pid;
   pcb[ count  ].ctx.cpsr = 0x50;
   pcb[ count  ].ctx.pc   = ( uint32_t  )( prog  );
   pcb[ count  ].ctx.sp   = ( uint32_t  )( tos_userProgram );    
@@ -197,6 +205,7 @@ void do_Exec (ctx_t* ctx ) {
 }
 
 
+//Exit a program called by the program
 void do_Exit (ctx_t* ctx ) {
   for (uint32_t i = icurrent; i<count; i++) {
     //pcb[i].pid = i;
@@ -215,6 +224,7 @@ void do_Exit (ctx_t* ctx ) {
   return;
 }
 
+//Kill a user program, called by the console
 void do_Kill( ctx_t* ctx ) {
   uint32_t P;
   bool valid = false;
@@ -244,6 +254,7 @@ void do_Kill( ctx_t* ctx ) {
   return;
 }
 
+//Kill all use programs
 void do_KillAll (ctx_t* ctx) {
   for(uint32_t i=count-1; i>0; i--) {
       ctx->gpr[ 0 ] = active_pids[i];
@@ -260,12 +271,14 @@ void do_KillAll (ctx_t* ctx) {
 bool flag_share = false;
 uint32_t share_loc[20] = {0};
 
+//High level supervisor interupt handler
 void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   /* Each time execution reaches this point, we are tasked with handling
    * a supervisor call (aka. software interrupt, i.e., a trap or system 
    * call).
    */
 
+  //Switch case to determin what was called and handle apropriatly
   switch( id  ) {
     case 0x00 : { // 0x00 => yield()
       scheduler( ctx  );
@@ -313,7 +326,15 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     case 0x06 : { //KILL()
       PL011_putc( UART0, 'K', true );
       drawLetter('K', 1);
+      pid_t p = ctx->gpr[0];
       do_Kill(ctx);
+      for(int i=count-1; i>-1; i--) {
+          if(pcb[active_pids[i]].parent == p) {
+              ctx->gpr[0] = pcb[active_pids[i]].pid;
+              do_Kill(ctx);
+          }
+
+      }
       break;
     }
     case 0x07 : { //Share init
@@ -433,11 +454,13 @@ int mouseChangeY;
 int mouseState;
 bool mouseLocked = false;
 
+//Interupt handler for Keyboard/Mouse and Timer
 void hilevel_handler_irq( ctx_t* ctx ) {
   // Step 2: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
 
+  //Timer interupt
   if( id == GIC_SOURCE_TIMER0 ) {
     TIMER0->Timer1IntClr = 0x01;
     timer++;
@@ -445,6 +468,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
   }
 
 
+  //Keyboard interupt
   if     ( id == GIC_SOURCE_PS20 ) {
       int x = PL050_getc( PS20 );
       char c = decode(x);
@@ -464,20 +488,10 @@ void hilevel_handler_irq( ctx_t* ctx ) {
           inputBuffer[consoleBuffer] = c;
           consoleBuffer++;
     }
-
-
-
-    //for (int i=0; i<30; i++) {
-    //    drawLetter(c, i*17+40, 40);
-    //    c++;
-    //}
-    //PL011_putc( UART0, '<',                      true ); 
-    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    //PL011_putc( UART0, '>',                      true ); 
   }
-  else if( id == GIC_SOURCE_PS21 ) {
 
+  //Mouse Interupt for movement and click
+  else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
     if (x == 0x09 && mouseCode == 0) {
         //mouse clicked
@@ -552,18 +566,7 @@ void hilevel_handler_irq( ctx_t* ctx ) {
     }
 
     drawCursor(cursorPos[0], cursorPos[1]);
-    
-    //PL011_putc( UART0, '1',                      true );  
-    //PL011_putc( UART0, '<',                      true ); 
-    //PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
-    //PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
-    //PL011_putc( UART0, '>',                      true ); 
   }
-
-  // Step 4: handle the interrupt, then clear (or reset) the source.
-
-  // Step 5: write the interrupt identifier to signal we're done.
-
   GICC0->EOIR = id;
 
   return;

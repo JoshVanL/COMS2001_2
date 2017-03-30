@@ -1,4 +1,5 @@
 #include "decoder.h"
+//Decodes key input codes to ASCII
 
 char decode(int x)  {
     char out = '-';

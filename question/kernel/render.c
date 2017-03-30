@@ -1,5 +1,7 @@
 #include "render.h"
 
+//Global graphics variables
+
 uint16_t fb[600][800];
 int currLine = 5;
 int currCol = 5;
@@ -10,6 +12,16 @@ int cursor[2] = {300, 300};
 int underCursor[8][8];
 bool initCursor = false;
 
+//Cursor image
+char cursorIm[8][8] =  {{1, 1, 1, 1, 1, 1, 1, 0},
+                       {1, 1, 1, 1, 1, 0, 0, 0},
+                       {1, 1, 1, 1, 0, 0, 0, 0},
+                       {1, 1, 1, 0, 1, 0, 0, 0},
+                       {1, 1, 0, 0, 0, 1, 0, 0},
+                       {1, 1, 0, 0, 0, 0, 1, 0},
+                       {1, 0, 0, 0, 0, 0, 0, 1}};
+
+//Draw new cursor position, preserve under the cursor
 void drawCursor(int x, int y) {
     int n = 0;
     int m = 0;
@@ -30,12 +42,13 @@ void drawCursor(int x, int y) {
         for(int j=y; j<y+8; j++) {
             underCursor[n][m] = fb[i][j];
             n++;
-            fb[i][j] = 0x7BEF;
+            if(cursorIm[i-x][j-y] == 1) fb[i][j] = 0xFFFF;
         }
         m++;
     }
 }
 
+//Mouse click. Test if it was on a button
 int mouseClicked() {
   char* arg;
     if(cursor[0] > 510 && cursor[0] < 563) {
@@ -60,6 +73,7 @@ int mouseClicked() {
   return 0;
 }
 
+//Refresh a pane [0] if left, [1] if right
 void upBuffer(int type) {
     if(type ==0) {
         for(int i=0; i<480; i++) {
@@ -81,6 +95,7 @@ void upBuffer(int type) {
 
 }
 
+//Initalise graphics
 void renderInit() {
   SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
   LCD->LCDTiming0    = 0x1313A4C4; // per per Table 4.3 of datasheet
@@ -264,6 +279,7 @@ void renderInit() {
 }
 
 
+//Carriage return on left or right panel
 void carriageReturn(int type) {
   if(type ==0) {
      for( int i=0; i<16; i++) {
@@ -286,6 +302,7 @@ void carriageReturn(int type) {
  return;
 }
 
+//Draw letter output
 void drawLetter(char c, int type) {
   if (type == 0) {
      if(currLine > 460) upBuffer(type);
@@ -343,6 +360,7 @@ void drawLetter(char c, int type) {
 
 }
 
+//delete letter form user input
 int deleteLetter(int consoleBuffer, int type) {
   for( int i=0; i<16; i++) {
       for(int j =0; j<16; j++) {
@@ -364,6 +382,7 @@ int deleteLetter(int consoleBuffer, int type) {
   return consoleBuffer;
 }
 
+//Draw string on left or right panel
 void drawString(char* c, int n, int type) {
     for(int i=0; i<n; i++) {
         if(c[i] =='\n') carriageReturn(type);

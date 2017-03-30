@@ -1,18 +1,17 @@
 #include "Philosopher.h"
 
+//'Pick up'
 bool pickup(int index, int n, int pnt) {
 
   int C[20]; 
   char p[5];
 
+  //Read shared mem
   share(SHARE_READ, pnt, C, 21);
-  setPriority(100);
   while(semaphore());
- // for(int i=0; i<n; i++) p[i] = C[i] + '0';
   p[0] = index + '0';
-  //write(STDOUT_FILENO, p, n);
 
-
+  //If can eat, assigns shared mem and return true, return false is not.
   if(C[index] == 0 && C[(index+1) % n] == 0) {
       C[index] = 1;
       C[(index+1) % n] = 1;
@@ -24,10 +23,12 @@ bool pickup(int index, int n, int pnt) {
   return false;
 }
 
+//'Put down chopstick'
 void putdown(int index, int n, int pnt) {
 
   int C[20]; 
 
+  //Read mem and put down chopsticks and write
   share(SHARE_READ, pnt, C, 20); 
   while(semaphore());
 
@@ -39,6 +40,7 @@ void putdown(int index, int n, int pnt) {
   return;
 }
 
+//'think' for some time
 void think(int n) {
 
   int sleep = curr_timer() + 2*n +6;
@@ -47,6 +49,7 @@ void think(int n) {
   return;
 }
 
+//'eat' for some time
 void eat(int n) {
 
   int sleep = curr_timer() + 2*n +1;
@@ -60,6 +63,7 @@ void main_Philosopher(int argc, char* argv[]) {
 
   int C[20];
 
+  //Fetch arguments
   char* d = (char *) argv;
   char a[2];
   char b[2];
@@ -78,6 +82,7 @@ void main_Philosopher(int argc, char* argv[]) {
   write(STDOUT_FILENO, c, 2);
   write(STDOUT_FILENO, " ", 2);
 
+  //Init parameters
   int index = a[1] - '0';
   if(a[0] == '1') index += 10;
   int n = b[1] - '0';
@@ -85,19 +90,20 @@ void main_Philosopher(int argc, char* argv[]) {
   int pnt = c[1] - '0';
   if(c[0] == '1') pnt += 10;
 
-  setPriority(10);
  
+  //Read shared mem and write out ready bit
   while(semaphore());
   share(SHARE_READ, pnt, C, 20); 
-  setPriority(10);
  
   C[19] =1;
 
   while(semaphore());
   share(SHARE_WRITE, pnt, C, 20); 
+  yield();
 
+  //Wait for go bit 
   while(C[0] ==1){
-    setPriority(-20);
+    yield();
     while(semaphore());
     share(SHARE_READ, pnt, C, 20); 
   }
@@ -110,6 +116,7 @@ void main_Philosopher(int argc, char* argv[]) {
   char* o;
   int l =0;
 
+  //Loop to think -> pickup -> eat -> putdown
   while(k<100) {
   for(int i=0; i<3; i++) m[i] = C[i] + '0';
     k++;

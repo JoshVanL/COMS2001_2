@@ -39,6 +39,7 @@ typedef struct {
 typedef struct {
       pid_t pid;
         ctx_t ctx;
+      pid_t parent;
 
 } pcb_t;
 

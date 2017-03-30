@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [...] hours
+effort : [65] hours
 
 -------------------------------------------------------------------------------
 
@@ -28,8 +28,30 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work 
 and what isn't:
 
-[...]
+[
+I have used an external resource for the bitmap font:
 
+https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
+
+ 8x8 monochrome bitmap fonts for rendering
+ Author: Daniel Hepper <daniel@hepper.net>
+ 
+ License: Public Domain
+ 
+ Based on:
+  Summary: font8x8.h
+  8x8 monochrome bitmap fonts for rendering
+ 
+  Author:
+      Marcel Sondaar
+      International Business Machines (public domain VGA fonts)
+ 
+  License:
+      Public Domain
+ 
+ Fetched from: http://dimensionalrift.homelinux.net/combuster/mos3/?p=viewsource&file=/modules/gfx/font8_8.asm
+
+]
 -------------------------------------------------------------------------------
 
 4. Marking
@@ -45,13 +67,13 @@ generality, realism, or style of a solution.
 
     Stage 2 : close generalisations and enhancements
 [X]           - fork, exec and exit system calls                     ( 15%)
-[?]           - priority based scheduler                             ( 10%)
-[?]           - Inter-Process Communication (IPC)                    ( 15%)
+[X]           - priority based scheduler                             ( 10%)
+[X]           - Inter-Process Communication (IPC)                    ( 15%)
 
     Stage 3 : open  generalisations and enhancements                 ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[?]           - LCD screen and PS/2 device drivers and GUI
+[X]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
